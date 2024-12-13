@@ -374,7 +374,9 @@ void free_pat(Pat *pat) {
     break;
   case PAT_LAYERED:
     free_vid(pat->u.layered.vid);
-    free_ty(pat->u.layered.ty);
+    if (pat->u.layered.ty != NULL) {
+      free_ty(pat->u.layered.ty);
+    }
     free_pat(pat->u.layered.pat);
     break;
   }
@@ -889,7 +891,9 @@ ConBind *new_conbind(int op_prefixed, VId *vid, Ty *ty, ConBind *next) {
 
 void free_conbind(ConBind *conbind) {
   free_vid(conbind->vid);
-  free_ty(conbind->ty);
+  if (conbind->ty != NULL) {
+    free_ty(conbind->ty);
+  }
   if (conbind->next != NULL) {
     free_conbind(conbind->next);
   }
@@ -922,7 +926,9 @@ void free_exbind(ExBind *exbind) {
   switch (exbind->kind) {
   case EXBIND_DECLARATION:
     free_vid(exbind->u.declaration.vid);
-    free_ty(exbind->u.declaration.ty);
+    if (exbind->u.declaration.ty != NULL) {
+      free_ty(exbind->u.declaration.ty);
+    }
     break;
   case EXBIND_REPLICATION:
     free_vid(exbind->u.replication.vid);
