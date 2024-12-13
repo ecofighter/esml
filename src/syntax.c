@@ -21,6 +21,8 @@ VIdList *new_vidlist(VId *vid, VIdList *next) {
 }
 
 void free_vidlist(VIdList *vidlist) {
+  if (!vidlist)
+    return;
   if (vidlist->next != NULL) {
     free_vidlist(vidlist->next);
   }
@@ -75,6 +77,8 @@ TyVarSeq *new_tyvarseq(TyVar *tyvar, TyVarSeq *next) {
 }
 
 void free_tyvarseq(TyVarSeq *tyvarseq) {
+  if (!tyvarseq)
+    return;
   if (tyvarseq->next != NULL) {
     free_tyvarseq(tyvarseq->next);
   }
@@ -159,6 +163,8 @@ StrIdList *new_stridlist(StrIdList *upper, StrId *strid) {
 }
 
 void free_stridlist(StrIdList *stridlist) {
+  if (!stridlist)
+    return;
   if (stridlist->upper != NULL) {
     free_stridlist(stridlist->upper);
   }
@@ -202,6 +208,8 @@ LongStrIdList *new_longstridlist(LongStrId *longstrid, LongStrIdList *next) {
 }
 
 void free_longstridlist(LongStrIdList *longstridlist) {
+  if (!longstridlist)
+    return;
   if (longstridlist->next != NULL) {
     free_longstridlist(longstridlist->next);
   }
@@ -441,6 +449,8 @@ TySeq *new_tyseq(Ty *ty, TySeq *next) {
 }
 
 void free_tyseq(TySeq *tyseq) {
+  if (!tyseq)
+    return;
   if (tyseq->next != NULL) {
     free_tyseq(tyseq->next);
   }

@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
     printf("\nParsing completed successfully.\n");
     print_ast(stdout, parse_result);
     yylex_destroy();
+    free_dec(parse_result);
     return 0;
   } else {
     printf("\nParsing failed.\n");
