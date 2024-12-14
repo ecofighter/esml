@@ -1,7 +1,6 @@
 %{
 #include "syntax.h"
 #include "parse_state.h"
-#include "parsing.h"
 #include "parser.h"
 
 #define comment_nest_level yyextra

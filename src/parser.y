@@ -4,7 +4,6 @@
 
 #include "syntax.h"
 #include "parse_state.h"
-#include "parsing.h"
 #include "parser.h"
 #include "lexer.h"
 
@@ -21,8 +20,7 @@ extern int parse_stdin(ParseState *state);
 %pure-parser
 %locations
 %lex-param { yyscan_t scanner }
-%parse-param { yyscan_t scanner }
-%parse-param { ParseState *state }
+%parse-param { yyscan_t scanner } { ParseState *state }
 %union {
   int int_val;
   char *string;
@@ -307,123 +305,191 @@ pat
 ;
 
 atty
-: tyvar { $$ = new_ty_type_variable($1); }
-| LBRACE RBRACE { $$ = new_ty_record_type_expression(NULL); }
-| LBRACE tyrow RBRACE { $$ = new_ty_record_type_expression($2); }
-| LPAREN ty RPAREN { $$ = new_ty_parened_ty($2); }
+: tyvar
+    { $$ = (Ty *)parse_state_register_node(state, new_ty_type_variable($1)); }
+| LBRACE RBRACE
+    { $$ = (Ty *)parse_state_register_node(state, new_ty_record_type_expression(NULL)); }
+| LBRACE tyrow RBRACE
+    { $$ = (Ty *)parse_state_register_node(state, new_ty_record_type_expression($2)); }
+| LPAREN ty RPAREN
+    { $$ = (Ty *)parse_state_register_node(state, new_ty_parened_ty($2)); }
 ;
 
 conty
-: atty { $$ = $1; }
-| tyseq longtycon { $$ = new_ty_type_construction($1, $2); }
+: atty
+    { $$ = $1; }
+| tyseq longtycon
+    { $$ = (Ty *)parse_state_register_node(state, new_ty_type_construction($1, $2)); }
 ;
 
 ty
 : conty
-| conty ARROW ty { $$ = new_ty_function_type_expression($1, $3); }
+    { $$ = $1; }
+| conty ARROW ty
+    { $$ = (Ty *)parse_state_register_node(state, new_ty_function_type_expression($1, $3)); }
 ;
 
 ty_comma_list2
-: ty COMMA ty { $$ = new_tyseq($1, new_tyseq($3, NULL)); }
-| ty COMMA ty_comma_list2 { $$ = new_tyseq($1, $3); }
+: ty COMMA ty
+    { $$ = (TySeq *)parse_state_register_node(state, new_tyseq($1, new_tyseq($3, NULL))); }
+| ty COMMA ty_comma_list2
+    { $$ = (TySeq *)parse_state_register_node(state, new_tyseq($1, $3)); }
 ;
 
 tyseq
-: conty { $$ = new_tyseq($1, NULL); }
-| /* empty */ { $$ = NULL; }
-| LPAREN ty_comma_list2 RPAREN { $$ = $2; }
+: conty
+    { $$ = (TySeq *)parse_state_register_node(state, new_tyseq($1, NULL)); }
+| /* empty */
+    { $$ = NULL; }
+| LPAREN ty_comma_list2 RPAREN
+    { $$ = $2; }
 ;
 
 tyrow
-: lab COLON ty { $$ = new_tyrow($1, $3, NULL); }
-| lab COLON ty COMMA tyrow { $$ = new_tyrow($1, $3, $5); }
+: lab COLON ty
+    { $$ = (TyRow *)parse_state_register_node(state, new_tyrow($1, $3, NULL)); }
+| lab COLON ty COMMA tyrow
+    { $$ = (TyRow *)parse_state_register_node(state, new_tyrow($1, $3, $5)); }
 ;
 
 atexp
-: scon { $$ = new_atexp_special_constant($1); }
-| OP_option longvid { $$ = new_atexp_value_identifier($1, $2); }
-| LBRACE RBRACE { $$ = new_atexp_record(NULL); }
-| LBRACE exprow RBRACE { $$ = new_atexp_record($2); }
-| LET dec IN exp END { $$ = new_atexp_local_declaration($2, $4); }
-| LPAREN exp RPAREN { $$ = new_atexp_parened_exp($2); }
+: scon
+    { $$ = (AtExp *)parse_state_register_node(state, new_atexp_special_constant($1)); }
+| OP_option longvid
+    { $$ = (AtExp *)parse_state_register_node(state, new_atexp_value_identifier($1, $2)); }
+| LBRACE RBRACE
+    { $$ = (AtExp *)parse_state_register_node(state, new_atexp_record(NULL)); }
+| LBRACE exprow RBRACE
+    { $$ = (AtExp *)parse_state_register_node(state, new_atexp_record($2)); }
+| LET dec IN exp END
+    { $$ = (AtExp *)parse_state_register_node(state, new_atexp_local_declaration($2, $4)); }
+| LPAREN exp RPAREN
+    { $$ = (AtExp *)parse_state_register_node(state, new_atexp_parened_exp($2)); }
 ;
 
 exprow
-: lab EQUAL exp COMMA exprow { $$ = new_exprow($1, $3, $5); }
-| lab EQUAL exp { $$ = new_exprow($1, $3, NULL); }
+: lab EQUAL exp COMMA exprow
+    { $$ = (ExpRow *)parse_state_register_node(state, new_exprow($1, $3, $5)); }
+| lab EQUAL exp
+    { $$ = (ExpRow *)parse_state_register_node(state, new_exprow($1, $3, NULL)); }
 ;
 
 exp
-: atexp { $$ = new_exp_atomic($1); }
-/* infixed exp */
-| exp COLON ty { $$ = new_exp_typed($1, $3); }
-| exp HANDLE match { $$ = new_exp_handle_exception($1, $3); }
-| RAISE exp { $$ = new_exp_raise_exception($2); }
-| FN match { $$ = new_exp_function($2); }
+: atexp
+    { $$ = (Exp *)parse_state_register_node(state, new_exp_atomic($1)); }
+/* TODO: infixed exp */
+| exp COLON ty
+    { $$ = (Exp *)parse_state_register_node(state, new_exp_typed($1, $3)); }
+| exp HANDLE match
+    { $$ = (Exp *)parse_state_register_node(state, new_exp_handle_exception($1, $3)); }
+| RAISE exp
+    { $$ = (Exp *)parse_state_register_node(state, new_exp_raise_exception($2)); }
+| FN match
+    { $$ = (Exp *)parse_state_register_node(state, new_exp_function($2)); }
 ;
 
 match
-: mrule BAR match { $$ = new_match($1, $3); }
-| mrule %prec DARROW { $$ = new_match($1, NULL); }
+: mrule BAR match
+    { $$ = (Match *)parse_state_register_node(state, new_match($1, $3)); }
+| mrule %prec DARROW
+    { $$ = (Match *)parse_state_register_node(state, new_match($1, NULL)); }
 ;
 
 mrule
-: pat DARROW exp { $$ = new_mrule($1, $3); }
+: pat DARROW exp
+    { $$ = (Mrule *)parse_state_register_node(state, new_mrule($1, $3)); }
 ;
 
 dec
-: VAL valbind { $$ = new_dec_value_declaration(NULL, $2); }
-| VAL tyvarseq1 valbind { $$ = new_dec_value_declaration($2, $3); }
-| TYPE typbind { $$ = new_dec_type_declaration($2); }
-| DATATYPE datbind { $$ = new_dec_datatype_declaration($2); }
-| DATATYPE tycon EQUAL DATATYPE longtycon { $$ = new_dec_datatype_replication($2, $5); }
-| ABSTYPE datbind WITH dec END { $$ = new_dec_abstype_declaration($2, $4); }
-| EXCEPTION exbind { $$ = new_dec_exception_declaration($2); }
-| LOCAL dec IN dec END { $$ = new_dec_local_declaration($2, $4); }
-| OPEN longstridlist1 { $$ = new_dec_open_declaration($2); }
-| dec SEMICOLON dec { $$ = new_dec_sequential_declaration($1, $3); }
-| dec dec %prec SEMICOLON { $$ = new_dec_sequential_declaration($1, $2); }
-| INFIX vid_list1 { $$ = new_dec_infix_l_directive(NULL, $2); }
-| INFIX NUMERIC vid_list1 { $$ = new_dec_infix_l_directive($2, $3); }
-| INFIXR vid_list1 { $$ = new_dec_infix_r_directive(NULL, $2); }
-| INFIXR NUMERIC vid_list1 { $$ = new_dec_infix_r_directive($2, $3); }
-| NONFIX vid_list1 { $$ = new_dec_nonfix_directive($2); }
+: VAL valbind
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_value_declaration(NULL, $2)); }
+| VAL tyvarseq1 valbind
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_value_declaration($2, $3)); }
+| TYPE typbind
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_type_declaration($2)); }
+| DATATYPE datbind
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_datatype_declaration($2)); }
+| DATATYPE tycon EQUAL DATATYPE longtycon
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_datatype_replication($2, $5)); }
+| ABSTYPE datbind WITH dec END
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_abstype_declaration($2, $4)); }
+| EXCEPTION exbind
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_exception_declaration($2)); }
+| LOCAL dec IN dec END
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_local_declaration($2, $4)); }
+| OPEN longstridlist1
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_open_declaration($2)); }
+| dec SEMICOLON dec
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_sequential_declaration($1, $3)); }
+| dec dec %prec SEMICOLON
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_sequential_declaration($1, $2)); }
+| INFIX vid_list1
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_l_directive(NULL, $2)); }
+| INFIX NUMERIC vid_list1
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_l_directive($2, $3)); }
+| INFIXR vid_list1
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_r_directive(NULL, $2)); }
+| INFIXR NUMERIC vid_list1
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_r_directive($2, $3)); }
+| NONFIX vid_list1
+    { $$ = (Dec *)parse_state_register_node(state, new_dec_nonfix_directive($2)); }
 ;
 
 valbind
-: pat EQUAL exp AND valbind { $$ = new_valbind_bind($1, $3, $5); }
-| pat EQUAL exp { $$ = new_valbind_bind($1, $3, NULL); }
-| REC valbind { $$ = new_valbind_rec($2); }
+: pat EQUAL exp AND valbind
+    { $$ = (ValBind *)parse_state_register_node(state, new_valbind_bind($1, $3, $5)); }
+| pat EQUAL exp
+    { $$ = (ValBind *)parse_state_register_node(state, new_valbind_bind($1, $3, NULL)); }
+| REC valbind
+    { $$ = (ValBind *)parse_state_register_node(state, new_valbind_rec($2)); }
 ;
 
 typbind
-: tyvarseq tycon EQUAL ty { $$ = new_typbind($1, $2, $4, NULL); }
-| tyvarseq tycon EQUAL ty AND typbind { $$ = new_typbind($1, $2, $4, $6); }
+: tyvarseq tycon EQUAL ty
+    { $$ = (TypBind *)parse_state_register_node(state, new_typbind($1, $2, $4, NULL)); }
+| tyvarseq tycon EQUAL ty AND typbind
+    { $$ = (TypBind *)parse_state_register_node(state, new_typbind($1, $2, $4, $6)); }
 ;
 
 datbind
-: tycon EQUAL conbind { $$ = new_datbind(NULL, $1, $3, NULL); }
-| tyvarseq1 tycon EQUAL conbind { $$ = new_datbind($1, $2, $4, NULL); }
-| tycon EQUAL conbind AND datbind { $$ = new_datbind(NULL, $1, $3, $5); }
-| tyvarseq1 tycon EQUAL conbind AND datbind { $$ = new_datbind($1, $2, $4, $6); }
+: tycon EQUAL conbind
+    { $$ = (DatBind *)parse_state_register_node(state, new_datbind(NULL, $1, $3, NULL)); }
+| tyvarseq1 tycon EQUAL conbind
+    { $$ = (DatBind *)parse_state_register_node(state, new_datbind($1, $2, $4, NULL)); }
+| tycon EQUAL conbind AND datbind
+    { $$ = (DatBind *)parse_state_register_node(state, new_datbind(NULL, $1, $3, $5)); }
+| tyvarseq1 tycon EQUAL conbind AND datbind
+    { $$ = (DatBind *)parse_state_register_node(state, new_datbind($1, $2, $4, $6)); }
 ;
 
 conbind
-: OP_option vid_bind { $$ = new_conbind($1, $2, NULL, NULL); }
-| OP_option vid_bind OF ty { $$ = new_conbind($1, $2, $4, NULL); }
-| OP_option vid_bind BAR conbind { $$ = new_conbind($1, $2, NULL, $4); }
-| OP_option vid_bind OF ty BAR conbind { $$ = new_conbind($1, $2, $4, $6); }
+: OP_option vid_bind
+    { $$ = (ConBind *)parse_state_register_node(state, new_conbind($1, $2, NULL, NULL)); }
+| OP_option vid_bind OF ty
+    { $$ = (ConBind *)parse_state_register_node(state, new_conbind($1, $2, $4, NULL)); }
+| OP_option vid_bind BAR conbind
+    { $$ = (ConBind *)parse_state_register_node(state, new_conbind($1, $2, NULL, $4)); }
+| OP_option vid_bind OF ty BAR conbind
+    { $$ = (ConBind *)parse_state_register_node(state, new_conbind($1, $2, $4, $6)); }
 ;
 
 exbind
-: OP_option vid_bind { $$ = new_exbind_declaration($1, $2, NULL, NULL); }
-| OP_option vid_bind OF ty { $$ = new_exbind_declaration($1, $2, $4, NULL); }
-| OP_option vid_bind AND exbind { $$ = new_exbind_declaration($1, $2, NULL, $4); }
-| OP_option vid_bind OF ty AND exbind { $$ = new_exbind_declaration($1, $2, $4, $6); }
-| OP_option vid_bind EQUAL OP_option longvid_bind { $$ = new_exbind_replication($1, $2, $4, $5, NULL); }
-| OP_option vid_bind EQUAL OP_option longvid_bind AND exbind { $$ = new_exbind_replication($1, $2, $4, $5, $7); }
+: OP_option vid_bind
+    { $$ = (ExBind *)parse_state_register_node(state, new_exbind_declaration($1, $2, NULL, NULL)); }
+| OP_option vid_bind OF ty
+    { $$ = (ExBind *)parse_state_register_node(state, new_exbind_declaration($1, $2, $4, NULL)); }
+| OP_option vid_bind AND exbind
+    { $$ = (ExBind *)parse_state_register_node(state, new_exbind_declaration($1, $2, NULL, $4)); }
+| OP_option vid_bind OF ty AND exbind
+    { $$ = (ExBind *)parse_state_register_node(state, new_exbind_declaration($1, $2, $4, $6)); }
+| OP_option vid_bind EQUAL OP_option longvid_bind
+    { $$ = (ExBind *)parse_state_register_node(state, new_exbind_replication($1, $2, $4, $5, NULL)); }
+| OP_option vid_bind EQUAL OP_option longvid_bind AND exbind
+    { $$ = (ExBind *)parse_state_register_node(state, new_exbind_replication($1, $2, $4, $5, $7)); }
 ;
+
 %%
+
 void yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParseState *state, char *msg) {
     return;
 }
