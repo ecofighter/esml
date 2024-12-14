@@ -5,8 +5,12 @@
 
 #define comment_nest_level yyextra
 
-#define YY_USER_ACTION yylloc->first_line = yylloc->last_line = yylineno; \
-    yylloc->first_column = yycolumn; yylloc->last_column = yycolumn + yyleng - 1;
+#define YY_USER_ACTION                                                                \
+  yylloc->first_line = yylloc->last_line = yylineno; yylloc->first_column = yycolumn; \
+  if (yylineno == yylloc->first_line) yycolumn += yyleng;                             \
+  else {                                                                              \
+    for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {}              \
+  }
 %}
 
 %option always-interactive
@@ -85,42 +89,12 @@ tyvar "'"({letter}|{digit}|[_'])*
 <INITIAL>"->" { return ARROW; }
 <INITIAL>"#" { return HASH; }
 
-<INITIAL>[1-9][0-9]* {
-  yylval->string = (char *)malloc(yyleng + 1);
-  memcpy(yylval->string, yytext, yyleng);
-  yylval->string[yyleng] = '\0';
-  return NUMERIC;
-}
-<INITIAL>~?[0-9]+ {
-  yylval->string = (char *)malloc(yyleng + 1);
-  memcpy(yylval->string, yytext, yyleng);
-  yylval->string[yyleng] = '\0';
-  return INTEGER;
-}
-<INITIAL>~?[0-9]+(\.[0-9]+)?(E~?[0-9]+)? {
-  yylval->string = (char *)malloc(yyleng + 1);
-  memcpy(yylval->string, yytext, yyleng);
-  yylval->string[yyleng] = '\0';
-  return REAL;
-}
-<INITIAL>{tyvar} {
-  yylval->string = (char *)malloc(yyleng+1);
-  memcpy(yylval->string, yytext, yyleng);
-  yylval->string[yyleng] = '\0';
-  return TYVAR;
-}
-<INITIAL>{alphanumeric_id} {
-  yylval->string = (char *)malloc(yyleng+1);
-  memcpy(yylval->string, yytext, yyleng);
-  yylval->string[yyleng] = '\0';
-  return IDENTIFIER;
-}
-<INITIAL>{symbolic_id} {
-  yylval->string = (char *)malloc(yyleng+1);
-  memcpy(yylval->string, yytext, yyleng);
-  yylval->string[yyleng] = '\0';
-  return IDENTIFIER;
-}
+<INITIAL>[1-9][0-9]* { return NUMERIC; }
+<INITIAL>~?[0-9]+ { return INTEGER; }
+<INITIAL>~?[0-9]+(\.[0-9]+)?(E~?[0-9]+)? { return REAL; }
+<INITIAL>{tyvar} { return TYVAR; }
+<INITIAL>{alphanumeric_id} { return IDENTIFIER; }
+<INITIAL>{symbolic_id} { return IDENTIFIER; }
 
 <COMMENT>"(*" {
   comment_nest_level++;

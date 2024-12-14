@@ -6,12 +6,6 @@
 #include "parse_state.h"
 #include "parser.h"
 #include "lexer.h"
-
-extern int yylex_init_extra(int, yyscan_t *);
-extern int yylex_destroy(yyscan_t);
-extern int yylex(YYSTYPE *, YYLTYPE *, yyscan_t);
-extern void yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParseState *state,
-                    char *msg);
 %}
 %code provides {
 extern int parse_stdin(ParseState *state);
@@ -73,10 +67,11 @@ extern int parse_stdin(ParseState *state);
 %token LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE
 %token COMMA COLON SEMICOLON DOTDOTDOT DOT
 %token UNDERBAR BAR EQUAL DARROW ARROW HASH
-%token <string> NUMERIC INTEGER WORD REAL
-%token <string> TYVAR IDENTIFIER
+%token NUMERIC INTEGER WORD REAL
+%token TYVAR IDENTIFIER
 %token ERROR
 
+%type <string> numeric integer word real identifier
 %type <int_val> OP_option
 %type <constant> scon
 %type <vid> vid_bind vid
@@ -134,16 +129,61 @@ program
 : dec { parse_state_set_result(state, $1); }
 ;
 
+numeric
+: NUMERIC
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (char *)parse_state_register_node(state, text); }
+;
+
+integer
+: INTEGER
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (char *)parse_state_register_node(state, text); }
+;
+
+word
+: WORD
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (char *)parse_state_register_node(state, text); }
+;
+
+real
+: REAL
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (char *)parse_state_register_node(state, text); }
+;
+
+identifier
+: IDENTIFIER
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (char *)parse_state_register_node(state, text); }
+;
+
 OP_option
 : OP { $$ = 1; }
 | /* empty */ { $$ = 0; }
 ;
 
 scon
-: NUMERIC
-    { $$ = (Constant *)parse_state_register_node(state, new_constant_integer((char *)parse_state_register_node(state, $1))); }
-| INTEGER
-    { $$ = (Constant *)parse_state_register_node(state, new_constant_integer((char *)parse_state_register_node(state, $1))); }
+: numeric
+    { $$ = (Constant *)parse_state_register_node(state, new_constant_integer($1)); }
+| integer
+    { $$ = (Constant *)parse_state_register_node(state, new_constant_integer($1)); }
 ;
 
 qualifying_strid_list1
@@ -154,8 +194,8 @@ qualifying_strid_list1
 ;
 
 vid
-: IDENTIFIER
-    { $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, $1))); }
+: identifier
+    { $$ = (VId *)parse_state_register_node(state, new_vid($1)); }
 | EQUAL
     { char *eq = (char *)malloc(2);
       eq[0] = '='; eq[1] = '\0';
@@ -177,8 +217,8 @@ longvid
 ;
 
 vid_bind
-: IDENTIFIER
-    { $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, $1))); }
+: identifier
+    { $$ = (VId *)parse_state_register_node(state, new_vid($1)); }
 ;
 
 longvid_bind
@@ -190,7 +230,11 @@ longvid_bind
 
 tyvar
 : TYVAR
-    { $$ = (TyVar *)parse_state_register_node(state, new_tyvar((char *)parse_state_register_node(state, $1))); }
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (TyVar *)parse_state_register_node(state, new_tyvar(parse_state_register_node(state, text))); }
 ;
 
 tyvar_comma_list1
@@ -215,8 +259,8 @@ tyvarseq
 ;
 
 tycon
-: IDENTIFIER
-    { $$ = (TyCon *)parse_state_register_node(state, new_tycon((char *)parse_state_register_node(state, $1))); }
+: identifier
+    { $$ = (TyCon *)parse_state_register_node(state, new_tycon($1)); }
 ;
 
 longtycon
@@ -227,15 +271,15 @@ longtycon
 ;
 
 lab
-: IDENTIFIER
-    { $$ = (Lab *)parse_state_register_node(state, new_lab_alphanumeric((char *)parse_state_register_node(state, $1))); }
-| NUMERIC
-    { $$ = (Lab *)parse_state_register_node(state, new_lab_numeric((char *)parse_state_register_node(state, $1))); }
+: identifier
+    { $$ = (Lab *)parse_state_register_node(state, new_lab_alphanumeric($1)); }
+| numeric
+    { $$ = (Lab *)parse_state_register_node(state, new_lab_numeric($1)); }
 ;
 
 strid
-: IDENTIFIER
-    { $$ = (StrId *)parse_state_register_node(state, new_strid((char *)parse_state_register_node(state, $1))); }
+: identifier
+    { $$ = (StrId *)parse_state_register_node(state, new_strid($1)); }
 ;
 
 longstrid
@@ -425,11 +469,11 @@ dec
     { $$ = (Dec *)parse_state_register_node(state, new_dec_sequential_declaration($1, $2)); }
 | INFIX vid_list1
     { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_l_directive(NULL, $2)); }
-| INFIX NUMERIC vid_list1
+| INFIX numeric vid_list1
     { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_l_directive($2, $3)); }
 | INFIXR vid_list1
     { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_r_directive(NULL, $2)); }
-| INFIXR NUMERIC vid_list1
+| INFIXR numeric vid_list1
     { $$ = (Dec *)parse_state_register_node(state, new_dec_infix_r_directive($2, $3)); }
 | NONFIX vid_list1
     { $$ = (Dec *)parse_state_register_node(state, new_dec_nonfix_directive($2)); }
