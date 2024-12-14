@@ -3,24 +3,34 @@ cmake_minimum_required(VERSION 3.21)
 project(esml VERSION 0.0.1 LANGUAGES C)
 add_compile_options(-g -Wall -Wextra -Wpedantic)
 
-set(SRC_DIR "src")
+set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 file(GLOB SRCS "${SRC_DIR}/*.c")
 
-find_package(FLEX 2.6 REQUIRED)
-find_package(BISON 3.0 REQUIRED)
 set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-set(LEXER_OUT "${PARSER_DIR}/lexer.c")
-set(PARSER_OUT "${PARSER_DIR}/parser.c")
+set(PARSER_INPUT "${SRC_DIR}/parser.y")
+set(PARSER_OUTPUT_C "${PARSER_DIR}/parser.c")
+set(PARSER_OUTPUT_H "${PARSER_DIR}/parser.h")
+set(PARSER_OUTPUT "${PARSER_OUTPUT_C}" "${PARSER_OUTPUT_H}")
+set(LEXER_INPUT "${SRC_DIR}/lexer.l")
+set(LEXER_OUTPUT_C "${PARSER_DIR}/lexer.c")
+set(LEXER_OUTPUT_H "${PARSER_DIR}/lexer.h")
+set(LEXER_OUTPUT "${LEXER_OUTPUT_C}" "${LEXER_OUTPUT_H}")
 
-flex_target(LEXER "${SRC_DIR}/lexer.l" "${LEXER_OUT}"
-            COMPILE_FLAGS --posix-compat
-            DEFINES_FILE "${PARSER_DIR}/lexer.h")
-bison_target(PARSER "${SRC_DIR}/parser.y" "${PARSER_OUT}"
-             COMPILE_FLAGS -y
-             DEFINES_FILE "${PARSER_DIR}/parser.h")
-add_flex_bison_dependency(LEXER PARSER)
+find_program(BYACC_EXECUTABLE NAMES byacc DOC "path to byacc executable")
+mark_as_advanced(BYACC_EXECUTABLE)
+find_program(FLEX_EXECUTABLE NAMES flex DOC "path to flex executable")
+mark_as_advanced(FLEX_EXECUTABLE)
 
-add_executable(esml ${SRCS} ${LEXER_OUT} ${PARSER_OUT})
+add_custom_command(OUTPUT ${PARSER_OUTPUT}
+  COMMAND ${BYACC_EXECUTABLE} -H ${PARSER_OUTPUT_H} -o ${PARSER_OUTPUT_C} ${PARSER_INPUT}
+  DEPENDS ${PARSER_INPUT}
+)
+add_custom_command(OUTPUT ${LEXER_OUTPUT}
+  COMMAND ${FLEX_EXECUTABLE} --header-file=${LEXER_OUTPUT_H} -o ${LEXER_OUTPUT_C} ${LEXER_INPUT}
+  DEPENDS ${LEXER_INPUT}
+)
+
+add_executable(esml ${SRCS} ${LEXER_OUTPUT} ${PARSER_OUTPUT})
 target_include_directories(esml PRIVATE "${SRC_DIR}")
 target_include_directories(esml PRIVATE "${PARSER_DIR}")
 set_property(TARGET esml PROPERTY C_EXTENSIONS OFF)

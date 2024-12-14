@@ -1,19 +1,21 @@
 %{
 #include "syntax.h"
+#include "parse_state.h"
+#include "parsing.h"
 #include "parser.h"
 
-static int line;
-static int column;
-static int comment_nest_level;
+#define comment_nest_level yyextra
 
-int yywrap(void);
-extern void yyerror(const char *msg);
-void yy_user_init();
-static void yy_user_action();
-#define YY_USER_INIT yy_user_init()
-#define YY_USER_ACTION yy_user_action();
+#define YY_USER_ACTION yylloc->first_line = yylloc->last_line = yylineno; \
+    yylloc->first_column = yycolumn; yylloc->last_column = yycolumn + yyleng - 1;
 %}
+
 %option always-interactive
+%option yylineno noyywrap noinput nounput
+%option extra-type="int"
+%option reentrant
+%option bison-bridge bison-locations
+
 %x COMMENT
 
 letter [a-zA-Z]
@@ -26,11 +28,7 @@ tyvar "'"({letter}|{digit}|[_'])*
 
 %%
 
-<INITIAL>\n {
-  line++;
-  column = 0;
-}
-<INITIAL>[ \t]+ { /* skip white space */ }
+<INITIAL>[ \t\n]+ { /* skip white space */ }
 <INITIAL>"abstype" { return ABSTYPE; }
 <INITIAL>"and" { return AND; }
 <INITIAL>"andalso" { return ANDALSO; }
@@ -68,7 +66,6 @@ tyvar "'"({letter}|{digit}|[_'])*
   BEGIN(COMMENT);
 }
 <INITIAL>"*)" {
-  yyerror("unmatched comment");
   return ERROR;
 }
 <INITIAL>"(" { return LPAREN; }
@@ -90,46 +87,42 @@ tyvar "'"({letter}|{digit}|[_'])*
 <INITIAL>"#" { return HASH; }
 
 <INITIAL>[1-9][0-9]* {
-  yylval.token.text = (char *)malloc(yyleng + 1);
-  memcpy(yylval.token.text, yytext, yyleng);
-  yylval.token.text[yyleng] = '\0';
+  yylval->string = (char *)malloc(yyleng + 1);
+  memcpy(yylval->string, yytext, yyleng);
+  yylval->string[yyleng] = '\0';
   return NUMERIC;
 }
 <INITIAL>~?[0-9]+ {
-  yylval.token.text = (char *)malloc(yyleng + 1);
-  memcpy(yylval.token.text, yytext, yyleng);
-  yylval.token.text[yyleng] = '\0';
+  yylval->string = (char *)malloc(yyleng + 1);
+  memcpy(yylval->string, yytext, yyleng);
+  yylval->string[yyleng] = '\0';
   return INTEGER;
 }
 <INITIAL>~?[0-9]+(\.[0-9]+)?(E~?[0-9]+)? {
-  yylval.token.text = (char *)malloc(yyleng + 1);
-  memcpy(yylval.token.text, yytext, yyleng);
-  yylval.token.text[yyleng] = '\0';
+  yylval->string = (char *)malloc(yyleng + 1);
+  memcpy(yylval->string, yytext, yyleng);
+  yylval->string[yyleng] = '\0';
   return REAL;
 }
 <INITIAL>{tyvar} {
-  yylval.token.text = (char *)malloc(yyleng+1);
-  memcpy(yylval.token.text, yytext, yyleng);
-  yylval.token.text[yyleng] = '\0';
+  yylval->string = (char *)malloc(yyleng+1);
+  memcpy(yylval->string, yytext, yyleng);
+  yylval->string[yyleng] = '\0';
   return TYVAR;
 }
 <INITIAL>{alphanumeric_id} {
-  yylval.token.text = (char *)malloc(yyleng+1);
-  memcpy(yylval.token.text, yytext, yyleng);
-  yylval.token.text[yyleng] = '\0';
+  yylval->string = (char *)malloc(yyleng+1);
+  memcpy(yylval->string, yytext, yyleng);
+  yylval->string[yyleng] = '\0';
   return IDENTIFIER;
 }
 <INITIAL>{symbolic_id} {
-  yylval.token.text = (char *)malloc(yyleng+1);
-  memcpy(yylval.token.text, yytext, yyleng);
-  yylval.token.text[yyleng] = '\0';
+  yylval->string = (char *)malloc(yyleng+1);
+  memcpy(yylval->string, yytext, yyleng);
+  yylval->string[yyleng] = '\0';
   return IDENTIFIER;
 }
 
-<COMMENT>\n {
-  line++;
-  column = 0;
-}
 <COMMENT>"(*" {
   comment_nest_level++;
 }
@@ -139,24 +132,8 @@ tyvar "'"({letter}|{digit}|[_'])*
     BEGIN(INITIAL);
   }
 }
-<COMMENT>[^\*\(\)\n]* {/* skip comment */}
-<COMMENT>"*"+[^\*\(\)\n]* {/* skip comment */}
-<COMMENT><<EOF>> { yyerror("EOF in comment"); }
+<COMMENT>[^\*\(\)]* {/* skip comment */}
+<COMMENT>"*"+[^\*\(\)]* {/* skip comment */}
+<COMMENT><<EOF>> { return ERROR; }
 
 %%
-int yywrap() {
-    return 1;
-}
-
-void yy_user_init() {
-  comment_nest_level = 0;
-  line = 1;
-  column = 0;
-  BEGIN(INITIAL);
-}
-
-static void yy_user_action() {
-  yylval.token.line = line;
-  yylval.token.column = column;
-  column += yyleng;
-}

@@ -1,18 +1,29 @@
 %{
 #include <stdlib.h>
+#include <stdio.h>
+
 #include "syntax.h"
+#include "parse_state.h"
+#include "parsing.h"
+#include "parser.h"
+#include "lexer.h"
 
-extern void yyerror(const char *msg);
-extern int yylex(void);
-Dec *parse_result;
+extern int yylex_init_extra(int, yyscan_t *);
+extern int yylex_destroy(yyscan_t);
+extern int yylex(YYSTYPE *, YYLTYPE *, yyscan_t);
+extern void yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParseState *state,
+                    char *msg);
 %}
+%code provides {
+extern int parse_stdin(ParseState *state);
+}
 
+%pure-parser
+%locations
+%lex-param { yyscan_t scanner }
+%parse-param { yyscan_t scanner }
+%parse-param { ParseState *state }
 %union {
-  struct {
-    char *text;
-    int line;
-    int column;
-  } token;
   int int_val;
   char *string;
   VId *vid;
@@ -45,7 +56,7 @@ Dec *parse_result;
   DatBind *datbind;
   ConBind *conbind;
   ExBind *exbind;
-};
+}
 
 %token ABSTYPE AND ANDALSO AS
 %token CASE
@@ -64,8 +75,8 @@ Dec *parse_result;
 %token LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE
 %token COMMA COLON SEMICOLON DOTDOTDOT DOT
 %token UNDERBAR BAR EQUAL DARROW ARROW HASH
-%token <token> NUMERIC INTEGER WORD REAL
-%token <token> TYVAR IDENTIFIER
+%token <string> NUMERIC INTEGER WORD REAL
+%token <string> TYVAR IDENTIFIER
 %token ERROR
 
 %type <int_val> OP_option
@@ -122,7 +133,7 @@ Dec *parse_result;
 
 %%
 program
-: dec { parse_result = $1; }
+: dec { parse_state_set_result(state, $1); }
 ;
 
 OP_option
@@ -131,114 +142,168 @@ OP_option
 ;
 
 scon
-: NUMERIC { $$ = new_constant_integer($1.text); }
-| INTEGER { $$ = new_constant_integer($1.text); }
+: NUMERIC
+    { $$ = (Constant *)parse_state_register_node(state, new_constant_integer((char *)parse_state_register_node(state, $1))); }
+| INTEGER
+    { $$ = (Constant *)parse_state_register_node(state, new_constant_integer((char *)parse_state_register_node(state, $1))); }
 ;
 
 qualifying_strid_list1
-: qualifying_strid_list1 strid DOT { $$ = new_stridlist($1, $2); }
-| strid DOT { $$ = new_stridlist(NULL, $1); }
+: qualifying_strid_list1 strid DOT
+    { $$ = (StrIdList *)parse_state_register_node(state, new_stridlist($1, $2)); }
+| strid DOT
+    { $$ = (StrIdList *)parse_state_register_node(state, new_stridlist(NULL, $1)); }
 ;
 
 vid
-: IDENTIFIER { $$ = new_vid($1.text); }
-| EQUAL { char *eq = (char *)malloc(2); eq[0] = '='; eq[1] = '\0'; $$ = new_vid(eq); }
+: IDENTIFIER
+    { $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, $1))); }
+| EQUAL
+    { char *eq = (char *)malloc(2);
+      eq[0] = '='; eq[1] = '\0';
+      $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, eq))); }
 ;
 
 vid_list1
-: vid vid_list1 { $$ = new_vidlist($1, $2); }
-| vid { $$ = new_vidlist($1, NULL); }
+: vid vid_list1
+    { $$ = (VIdList *)parse_state_register_node(state, new_vidlist($1, $2)); }
+| vid
+    { $$ = (VIdList *)parse_state_register_node(state, new_vidlist($1, NULL)); }
 ;
 
 longvid
-: vid { $$ = new_longvid_nonqualified($1); }
-| qualifying_strid_list1 vid { $$ = new_longvid_qualified($1, $2); }
+: vid
+    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_nonqualified($1)); }
+| qualifying_strid_list1 vid
+    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_qualified($1, $2)); }
 ;
 
 vid_bind
-: IDENTIFIER { $$ = new_vid($1.text); }
+: IDENTIFIER
+    { $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, $1))); }
 ;
 
 longvid_bind
-: vid_bind { $$ = new_longvid_nonqualified($1); }
-| qualifying_strid_list1 vid_bind { $$ = new_longvid_qualified($1, $2); }
+: vid_bind
+    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_nonqualified($1)); }
+| qualifying_strid_list1 vid_bind
+    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_qualified($1, $2)); }
 ;
 
 tyvar
-: TYVAR { $$ = new_tyvar($1.text); }
+: TYVAR
+    { $$ = (TyVar *)parse_state_register_node(state, new_tyvar((char *)parse_state_register_node(state, $1))); }
 ;
 
 tyvar_comma_list1
-: tyvar COMMA tyvar_comma_list1 { $$ = new_tyvarseq($1, $3); }
-| tyvar { $$ = new_tyvarseq($1, NULL); }
+: tyvar COMMA tyvar_comma_list1
+    { $$ = (TyVarSeq *)parse_state_register_node(state, new_tyvarseq($1, $3)); }
+| tyvar
+    { $$ = (TyVarSeq *)parse_state_register_node(state, new_tyvarseq($1, NULL)); }
 ;
 
 tyvarseq1
-: tyvar { $$ = new_tyvarseq($1, NULL); }
-| LPAREN tyvar_comma_list1 RPAREN { $$ = $2; }
+: tyvar
+    { $$ = (TyVarSeq *)parse_state_register_node(state, new_tyvarseq($1, NULL)); }
+| LPAREN tyvar_comma_list1 RPAREN
+    { $$ = $2; }
+;
 
 tyvarseq
-: tyvarseq1 { $$ = $1; }
-| /* empty */ { $$ = NULL; }
+: tyvarseq1
+    { $$ = $1; }
+| /* empty */
+    { $$ = NULL; }
 ;
 
 tycon
-: IDENTIFIER { $$ = new_tycon($1.text); }
+: IDENTIFIER
+    { $$ = (TyCon *)parse_state_register_node(state, new_tycon((char *)parse_state_register_node(state, $1))); }
 ;
 
 longtycon
-: tycon { $$ = new_longtycon_nonqualified($1); }
-| qualifying_strid_list1 tycon { $$ = new_longtycon_qualified($1, $2); }
+: tycon
+    { $$ = (LongTyCon *)parse_state_register_node(state, new_longtycon_nonqualified($1)); }
+| qualifying_strid_list1 tycon
+    { $$ = (LongTyCon *)parse_state_register_node(state, new_longtycon_qualified($1, $2)); }
 ;
 
 lab
-: IDENTIFIER { $$ = new_lab_alphanumeric($1.text); }
-| NUMERIC { $$ = new_lab_numeric($1.text); }
+: IDENTIFIER
+    { $$ = (Lab *)parse_state_register_node(state, new_lab_alphanumeric((char *)parse_state_register_node(state, $1))); }
+| NUMERIC
+    { $$ = (Lab *)parse_state_register_node(state, new_lab_numeric((char *)parse_state_register_node(state, $1))); }
 ;
 
 strid
-: IDENTIFIER { $$ = new_strid($1.text); }
+: IDENTIFIER
+    { $$ = (StrId *)parse_state_register_node(state, new_strid((char *)parse_state_register_node(state, $1))); }
 ;
 
 longstrid
-: strid { $$ = new_longstrid_nonqualified($1); }
-| qualifying_strid_list1 strid { $$ = new_longstrid_qualified($1, $2); }
+: strid
+    { $$ = (LongStrId *)parse_state_register_node(state, new_longstrid_nonqualified($1)); }
+| qualifying_strid_list1 strid
+    { $$ = (LongStrId *)parse_state_register_node(state, new_longstrid_qualified($1, $2)); }
 ;
 
 longstridlist1
-: longstrid longstridlist1 { $$ = new_longstridlist($1, $2); }
-| longstrid { $$ = new_longstridlist($1, NULL); }
+: longstrid longstridlist1
+    { $$ = (LongStrIdList *)parse_state_register_node(state, new_longstridlist($1, $2)); }
+| longstrid
+    { $$ = (LongStrIdList *)parse_state_register_node(state, new_longstridlist($1, NULL)); }
 ;
 
 atpat_nonid
-: UNDERBAR { $$ = new_atpat_wildcard(); }
-| scon { $$ = new_atpat_special_constant($1); }
-| LBRACE RBRACE { $$ = new_atpat_record(NULL); }
-| LBRACE patrow RBRACE { $$ = new_atpat_record($2); }
-| LPAREN pat RPAREN { $$ = new_atpat_parened_pat($2); }
+: UNDERBAR
+    { $$ = (AtPat *)parse_state_register_node(state, new_atpat_wildcard()); }
+| scon
+    { $$ = (AtPat *)parse_state_register_node(state, new_atpat_special_constant($1)); }
+| LBRACE RBRACE
+    { $$ = (AtPat *)parse_state_register_node(state, new_atpat_record(NULL)); }
+| LBRACE patrow RBRACE
+    { $$ = (AtPat *)parse_state_register_node(state, new_atpat_record($2)); }
+| LPAREN pat RPAREN
+    { $$ = (AtPat *)parse_state_register_node(state, new_atpat_parened_pat($2)); }
 ;
 
 atpat
-: atpat_nonid { $$ = $1; }
-| OP_option longvid_bind { $$ = new_atpat_value_identifier($1, $2); }
+: atpat_nonid
+    { $$ = $1; }
+| OP_option longvid_bind
+    { $$ = (AtPat *)parse_state_register_node(state, new_atpat_value_identifier($1, $2)); }
 ;
 
 patrow
-: lab EQUAL pat { $$ = new_patrow_pattern_row($1, $3, NULL); }
-| lab EQUAL pat COMMA patrow { $$ = new_patrow_pattern_row($1, $3, $5); }
-| DOTDOTDOT { $$ = new_patrow_wildcard(); }
+: lab EQUAL pat
+    { $$ = (PatRow *)parse_state_register_node(state, new_patrow_pattern_row($1, $3, NULL)); }
+| lab EQUAL pat COMMA patrow
+    { $$ = (PatRow *)parse_state_register_node(state, new_patrow_pattern_row($1, $3, $5)); }
+| DOTDOTDOT
+    { $$ = (PatRow *)parse_state_register_node(state, new_patrow_wildcard()); }
 ;
 
 pat
-: atpat { $$ = new_pat_atomic($1); }
+: atpat
+    { $$ = (Pat *)parse_state_register_node(state, new_pat_atomic($1)); }
 /* TODO infxed */
 | OP_option vid_bind COLON ty
-  { $$ = new_pat_typed(new_pat_atomic(new_atpat_value_identifier($1, new_longvid_nonqualified($2))), $4); }
-| atpat_nonid COLON ty { $$ = new_pat_typed(new_pat_atomic($1), $3); }
-| OP_option longvid_bind atpat { $$ = new_pat_constructed_pattern($1, $2, $3); }
-| OP_option longvid_bind atpat COLON ty { $$ = new_pat_typed(new_pat_constructed_pattern($1, $2, $3), $5); }
-| OP_option vid_bind AS pat { $$ = new_pat_layered($1, $2, NULL, $4); }
-| OP_option vid_bind COLON ty AS pat { $$ = new_pat_layered($1, $2, $4, $6); }
+    { LongVId *longvid = (LongVId *)parse_state_register_node(state, new_longvid_nonqualified($2));
+      AtPat *atpat = (AtPat *)parse_state_register_node(state, new_atpat_value_identifier($1, longvid));
+      Pat *pat_atomic = (Pat *)parse_state_register_node(state, new_pat_atomic(atpat));
+      $$ = (Pat *)parse_state_register_node(state, new_pat_typed(pat_atomic, $4)); }
+| atpat_nonid COLON ty
+    { Pat *atpat_nonid = (Pat *)parse_state_register_node(state, new_pat_atomic($1));
+      $$ = (Pat *)parse_state_register_node(state, new_pat_typed(atpat_nonid, $3)); }
+| OP_option longvid_bind atpat
+    { $$ = (Pat *)parse_state_register_node(state, new_pat_constructed_pattern($1, $2, $3)); }
+| OP_option longvid_bind atpat COLON ty
+    { Pat *cons_pat = (Pat *)parse_state_register_node(state, new_pat_constructed_pattern($1, $2, $3));
+      $$ = (Pat *)parse_state_register_node(state, new_pat_typed(cons_pat, $5)); }
+| OP_option vid_bind AS pat
+    { $$ = (Pat *)parse_state_register_node(state, new_pat_layered($1, $2, NULL, $4)); }
+| OP_option vid_bind COLON ty AS pat
+    { $$ = (Pat *)parse_state_register_node(state, new_pat_layered($1, $2, $4, $6)); }
 ;
 
 atty
@@ -319,9 +384,9 @@ dec
 | dec SEMICOLON dec { $$ = new_dec_sequential_declaration($1, $3); }
 | dec dec %prec SEMICOLON { $$ = new_dec_sequential_declaration($1, $2); }
 | INFIX vid_list1 { $$ = new_dec_infix_l_directive(NULL, $2); }
-| INFIX NUMERIC vid_list1 { $$ = new_dec_infix_l_directive($2.text, $3); }
+| INFIX NUMERIC vid_list1 { $$ = new_dec_infix_l_directive($2, $3); }
 | INFIXR vid_list1 { $$ = new_dec_infix_r_directive(NULL, $2); }
-| INFIXR NUMERIC vid_list1 { $$ = new_dec_infix_r_directive($2.text, $3); }
+| INFIXR NUMERIC vid_list1 { $$ = new_dec_infix_r_directive($2, $3); }
 | NONFIX vid_list1 { $$ = new_dec_nonfix_directive($2); }
 ;
 
@@ -359,3 +424,14 @@ exbind
 | OP_option vid_bind EQUAL OP_option longvid_bind AND exbind { $$ = new_exbind_replication($1, $2, $4, $5, $7); }
 ;
 %%
+void yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParseState *state, char *msg) {
+    return;
+}
+
+int parse_stdin(ParseState *state) {
+    yyscan_t scanner;
+    yylex_init_extra(0, &scanner);
+    int result = yyparse(scanner, state);
+    yylex_destroy(scanner);
+    return result;
+}
