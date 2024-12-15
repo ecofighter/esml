@@ -31,6 +31,17 @@ void free_vidlist(VIdList *vidlist) {
   free(vidlist);
 }
 
+QualifiedVId *new_qualified_vid(char *value) {
+  QualifiedVId *qualified_vid = (QualifiedVId *)malloc(sizeof(QualifiedVId));
+  qualified_vid->value = value;
+  return qualified_vid;
+}
+
+void free_qualified_vid(QualifiedVId *qualified_vid) {
+  free(qualified_vid->value);
+  free(qualified_vid);
+}
+
 LongVId *new_longvid_nonqualified(VId *vid) {
   LongVId *longvid = (LongVId *)malloc(sizeof(LongVId));
   longvid->kind = LONGVID_NONQUALIFIED;
@@ -38,11 +49,10 @@ LongVId *new_longvid_nonqualified(VId *vid) {
   return longvid;
 }
 
-LongVId *new_longvid_qualified(StrIdList *strids, VId *vid) {
+LongVId *new_longvid_qualified(QualifiedVId *qualified_vid) {
   LongVId *longvid = (LongVId *)malloc(sizeof(LongVId));
   longvid->kind = LONGVID_QUALIFIED;
-  longvid->u.qualified.strids = strids;
-  longvid->u.qualified.vid = vid;
+  longvid->u.qualified.qualified_vid = qualified_vid;
   return longvid;
 }
 
@@ -52,8 +62,7 @@ void free_longvid(LongVId *longvid) {
     free_vid(longvid->u.nonqualified.vid);
     break;
   case LONGVID_QUALIFIED:
-    free_stridlist(longvid->u.qualified.strids);
-    free_vid(longvid->u.qualified.vid);
+    free_qualified_vid(longvid->u.qualified.qualified_vid);
     break;
   }
   free(longvid);
@@ -98,6 +107,18 @@ void free_tycon(TyCon *tycon) {
   free(tycon);
 }
 
+QualifiedTyCon *new_qualified_tycon(char *value) {
+  QualifiedTyCon *qualified_tycon =
+      (QualifiedTyCon *)malloc(sizeof(QualifiedTyCon));
+  qualified_tycon->value = value;
+  return qualified_tycon;
+}
+
+void free_qualified_tycon(QualifiedTyCon *qualified_tycon) {
+  free(qualified_tycon->value);
+  free(qualified_tycon);
+}
+
 LongTyCon *new_longtycon_nonqualified(TyCon *tycon) {
   LongTyCon *longtycon = (LongTyCon *)malloc(sizeof(LongTyCon));
   longtycon->kind = LONGTYCON_NONQUALIFIED;
@@ -105,11 +126,10 @@ LongTyCon *new_longtycon_nonqualified(TyCon *tycon) {
   return longtycon;
 }
 
-LongTyCon *new_longtycon_qualified(StrIdList *strids, TyCon *tycon) {
+LongTyCon *new_longtycon_qualified(QualifiedTyCon *qualified_tycon) {
   LongTyCon *longtycon = (LongTyCon *)malloc(sizeof(LongTyCon));
   longtycon->kind = LONGTYCON_QUALIFIED;
-  longtycon->u.qualified.strids = strids;
-  longtycon->u.qualified.tycon = tycon;
+  longtycon->u.qualified.qualified_tycon = qualified_tycon;
   return longtycon;
 }
 
@@ -119,8 +139,7 @@ void free_longtycon(LongTyCon *longtycon) {
     free_tycon(longtycon->u.nonqualified.tycon);
     break;
   case LONGTYCON_QUALIFIED:
-    free_stridlist(longtycon->u.qualified.strids);
-    free_tycon(longtycon->u.qualified.tycon);
+    free_qualified_tycon(longtycon->u.qualified.qualified_tycon);
     break;
   }
   free(longtycon);
@@ -156,21 +175,16 @@ void free_strid(StrId *strid) {
   free(strid);
 }
 
-StrIdList *new_stridlist(StrIdList *upper, StrId *strid) {
-  StrIdList *stridlist = (StrIdList *)malloc(sizeof(StrIdList));
-  stridlist->upper = upper;
-  stridlist->strid = strid;
-  return stridlist;
+QualifiedStrId *new_qualified_strid(char *value) {
+  QualifiedStrId *qualified_strid =
+      (QualifiedStrId *)malloc(sizeof(QualifiedStrId));
+  qualified_strid->value = value;
+  return qualified_strid;
 }
 
-void free_stridlist(StrIdList *stridlist) {
-  if (!stridlist)
-    return;
-  if (stridlist->upper != NULL) {
-    free_stridlist(stridlist->upper);
-  }
-  free_strid(stridlist->strid);
-  free(stridlist);
+void free_qualified_strid(QualifiedStrId *qualified_strid) {
+  free(qualified_strid->value);
+  free(qualified_strid);
 }
 
 LongStrId *new_longstrid_nonqualified(StrId *strid) {
@@ -180,11 +194,10 @@ LongStrId *new_longstrid_nonqualified(StrId *strid) {
   return longstrid;
 }
 
-LongStrId *new_longstrid_qualified(StrIdList *strids, StrId *strid) {
+LongStrId *new_longstrid_qualified(QualifiedStrId *qualified_strid) {
   LongStrId *longstrid = (LongStrId *)malloc(sizeof(LongStrId));
   longstrid->kind = LONGSTRID_QUALIFIED;
-  longstrid->u.qualified.strids = strids;
-  longstrid->u.qualified.strid = strid;
+  longstrid->u.qualified.qualified_strid = qualified_strid;
   return longstrid;
 }
 
@@ -194,8 +207,7 @@ void free_longstrid(LongStrId *longstrid) {
     free_strid(longstrid->u.nonqualified.strid);
     break;
   case LONGSTRID_QUALIFIED:
-    free_stridlist(longstrid->u.qualified.strids);
-    free_strid(longstrid->u.qualified.strid);
+    free_qualified_strid(longstrid->u.qualified.qualified_strid);
     break;
   }
   free(longstrid);

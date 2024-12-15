@@ -7,20 +7,24 @@ struct VIdList;
 typedef struct VIdList VIdList;
 struct LongVId;
 typedef struct LongVId LongVId;
+struct QualifiedVId;
+typedef struct QualifiedVId QualifiedVId;
 struct TyVar;
 typedef struct TyVar TyVar;
 struct TyVarSeq;
 typedef struct TyVarSeq TyVarSeq;
 struct TyCon;
 typedef struct TyCon TyCon;
+struct QualifiedTyCon;
+typedef struct QualifiedTyCon QualifiedTyCon;
 struct LongTyCon;
 typedef struct LongTyCon LongTyCon;
 struct Lab;
 typedef struct Lab Lab;
 struct StrId;
 typedef struct StrId StrId;
-struct StrIdList;
-typedef struct StrIdList StrIdList;
+struct QualifiedStrId;
+typedef struct QualifiedStrId QualifiedStrId;
 struct LongStrId;
 typedef struct LongStrId LongStrId;
 struct LongStrIdList;
@@ -71,6 +75,10 @@ struct VIdList {
   VIdList *next;
 };
 
+struct QualifiedVId {
+  char *value;
+};
+
 typedef enum LongVIdKind {
   LONGVID_NONQUALIFIED,
   LONGVID_QUALIFIED,
@@ -83,8 +91,7 @@ struct LongVId {
       VId *vid;
     } nonqualified;
     struct {
-      StrIdList *strids;
-      VId *vid;
+      QualifiedVId *qualified_vid;
     } qualified;
   } u;
 };
@@ -102,6 +109,10 @@ struct TyCon {
   char *value;
 };
 
+struct QualifiedTyCon {
+  char *value;
+};
+
 typedef enum LongTyConKind {
   LONGTYCON_NONQUALIFIED,
   LONGTYCON_QUALIFIED,
@@ -114,8 +125,7 @@ struct LongTyCon {
       TyCon *tycon;
     } nonqualified;
     struct {
-      StrIdList *strids;
-      TyCon *tycon;
+      QualifiedTyCon *qualified_tycon;
     } qualified;
   } u;
 };
@@ -134,9 +144,8 @@ struct StrId {
   char *value;
 };
 
-struct StrIdList {
-  StrIdList *upper;
-  StrId *strid;
+struct QualifiedStrId {
+  char *value;
 };
 
 typedef enum LongStrIdKind {
@@ -151,8 +160,7 @@ struct LongStrId {
       StrId *strid;
     } nonqualified;
     struct {
-      StrIdList *strids;
-      StrId *strid;
+      QualifiedStrId *qualified_strid;
     } qualified;
   } u;
 };
@@ -518,8 +526,10 @@ VId *new_vid(char *value);
 void free_vid(VId *vid);
 VIdList *new_vidlist(VId *vid, VIdList *next);
 void free_vidlist(VIdList *vidlist);
+QualifiedVId *new_qualified_vid(char *value);
+void free_qualified_vid(QualifiedVId *qualified_vid);
 LongVId *new_longvid_nonqualified(VId *vid);
-LongVId *new_longvid_qualified(StrIdList *strids, VId *vid);
+LongVId *new_longvid_qualified(QualifiedVId *qualified_vid);
 void free_longvid(LongVId *longvid);
 TyVar *new_tyvar(char *value);
 void free_tyvar(TyVar *tyvar);
@@ -527,18 +537,20 @@ TyVarSeq *new_tyvarseq(TyVar *tyvar, TyVarSeq *next);
 void free_tyvarseq(TyVarSeq *tyvarseq);
 TyCon *new_tycon(char *value);
 void free_tycon(TyCon *tycon);
+QualifiedTyCon *new_qualified_tycon(char *value);
+void free_qualified_tycon(QualifiedTyCon *qualified_tycon);
 LongTyCon *new_longtycon_nonqualified(TyCon *tycon);
-LongTyCon *new_longtycon_qualified(StrIdList *strids, TyCon *tycon);
+LongTyCon *new_longtycon_qualified(QualifiedTyCon *qualified_tycon);
 void free_longtycon(LongTyCon *longtycon);
 Lab *new_lab_alphanumeric(char *value);
 Lab *new_lab_numeric(char *value);
 void free_lab(Lab *lab);
 StrId *new_strid(char *value);
 void free_strid(StrId *strid);
-StrIdList *new_stridlist(StrIdList *upper, StrId *strid);
-void free_stridlist(StrIdList *stridlist);
+QualifiedStrId *new_qualified_strid(char *value);
+void free_qualified_strid(QualifiedStrId *qualified_strid);
 LongStrId *new_longstrid_nonqualified(StrId *strid);
-LongStrId *new_longstrid_qualified(StrIdList *strids, StrId *strid);
+LongStrId *new_longstrid_qualified(QualifiedStrId *qualified_strid);
 void free_longstrid(LongStrId *longstrid);
 LongStrIdList *new_longstridlist(LongStrId *longstrid, LongStrIdList *next);
 void free_longstridlist(LongStrIdList *longstridlist);

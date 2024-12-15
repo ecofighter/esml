@@ -20,14 +20,16 @@ extern int parse_stdin(ParseState *state);
   char *string;
   VId *vid;
   VIdList *vidlist;
+  QualifiedVId *qualified_vid;
   LongVId *longvid;
   TyVar *tyvar;
   TyVarSeq *tyvarseq;
   TyCon *tycon;
+  QualifiedTyCon *qualified_tycon;
   LongTyCon *longtycon;
   Lab *lab;
   StrId *strid;
-  StrIdList *stridlist;
+  QualifiedStrId *qualified_strid;
   LongStrId *longstrid;
   LongStrIdList *longstridlist;
   Constant *constant;
@@ -65,25 +67,27 @@ extern int parse_stdin(ParseState *state);
 %token VAL
 %token WITH WITHTYPE WHILE
 %token LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE
-%token COMMA COLON SEMICOLON DOTDOTDOT DOT
-%token UNDERBAR BAR EQUAL DARROW ARROW HASH
+%token COMMA COLON SEMICOLON DOTDOTDOT
+%token UNDERBAR BAR EQUAL ASTERISK DARROW ARROW HASH
 %token NUMERIC INTEGER WORD REAL
-%token TYVAR IDENTIFIER
+%token TYVAR IDENTIFIER QUALIFIED_IDENTIFIER
 %token ERROR
 
-%type <string> numeric integer word real identifier
+%type <string> numeric integer word real identifier qualified_identifier
 %type <int_val> OP_option
 %type <constant> scon
 %type <vid> vid_bind vid
 %type <vidlist> vid_list1
-%type <longvid> longvid_bind longvid
+%type <qualified_vid> qualified_vid
+%type <longvid> longvid longvid_bind
 %type <tyvar> tyvar
 %type <tyvarseq> tyvar_comma_list1 tyvarseq1 tyvarseq
 %type <tycon> tycon
+%type <qualified_tycon> qualified_tycon
 %type <longtycon> longtycon
 %type <lab> lab
 %type <strid> strid
-%type <stridlist> qualifying_strid_list1
+%type <qualified_strid> qualified_strid
 %type <longstrid> longstrid
 %type <longstridlist> longstridlist1
 %type <atpat> atpat_nonid atpat
@@ -174,6 +178,15 @@ identifier
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
+qualified_identifier
+: QUALIFIED_IDENTIFIER
+    { int len = yyget_leng(scanner);
+      char *text = (char *)malloc(len + 1);
+      memcpy(text, yyget_text(scanner), len);
+      text[len] = '\0';
+      $$ = (char *)parse_state_register_node(state, text); }
+;
+
 OP_option
 : OP { $$ = 1; }
 | /* empty */ { $$ = 0; }
@@ -184,13 +197,6 @@ scon
     { $$ = (Constant *)parse_state_register_node(state, new_constant_integer($1)); }
 | integer
     { $$ = (Constant *)parse_state_register_node(state, new_constant_integer($1)); }
-;
-
-qualifying_strid_list1
-: qualifying_strid_list1 strid DOT
-    { $$ = (StrIdList *)parse_state_register_node(state, new_stridlist($1, $2)); }
-| strid DOT
-    { $$ = (StrIdList *)parse_state_register_node(state, new_stridlist(NULL, $1)); }
 ;
 
 vid
@@ -209,11 +215,16 @@ vid_list1
     { $$ = (VIdList *)parse_state_register_node(state, new_vidlist($1, NULL)); }
 ;
 
+qualified_vid
+: qualified_identifier
+    { $$ = (QualifiedVId *)parse_state_register_node(state, new_qualified_vid($1)); }
+;
+
 longvid
 : vid
     { $$ = (LongVId *)parse_state_register_node(state, new_longvid_nonqualified($1)); }
-| qualifying_strid_list1 vid
-    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_qualified($1, $2)); }
+| qualified_vid
+    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_qualified($1)); }
 ;
 
 vid_bind
@@ -224,10 +235,9 @@ vid_bind
 longvid_bind
 : vid_bind
     { $$ = (LongVId *)parse_state_register_node(state, new_longvid_nonqualified($1)); }
-| qualifying_strid_list1 vid_bind
-    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_qualified($1, $2)); }
+| qualified_vid
+    { $$ = (LongVId *)parse_state_register_node(state, new_longvid_qualified($1)); }
 ;
-
 tyvar
 : TYVAR
     { int len = yyget_leng(scanner);
@@ -263,11 +273,16 @@ tycon
     { $$ = (TyCon *)parse_state_register_node(state, new_tycon($1)); }
 ;
 
+qualified_tycon
+: qualified_identifier
+    { $$ = (QualifiedTyCon *)parse_state_register_node(state, new_qualified_tycon($1)); }
+;
+
 longtycon
 : tycon
     { $$ = (LongTyCon *)parse_state_register_node(state, new_longtycon_nonqualified($1)); }
-| qualifying_strid_list1 tycon
-    { $$ = (LongTyCon *)parse_state_register_node(state, new_longtycon_qualified($1, $2)); }
+| qualified_tycon
+    { $$ = (LongTyCon *)parse_state_register_node(state, new_longtycon_qualified($1)); }
 ;
 
 lab
@@ -282,11 +297,16 @@ strid
     { $$ = (StrId *)parse_state_register_node(state, new_strid($1)); }
 ;
 
+qualified_strid
+: qualified_identifier
+    { $$ = (QualifiedStrId *)parse_state_register_node(state, new_qualified_strid($1)); }
+;
+
 longstrid
 : strid
     { $$ = (LongStrId *)parse_state_register_node(state, new_longstrid_nonqualified($1)); }
-| qualifying_strid_list1 strid
-    { $$ = (LongStrId *)parse_state_register_node(state, new_longstrid_qualified($1, $2)); }
+| qualified_strid
+    { $$ = (LongStrId *)parse_state_register_node(state, new_longstrid_qualified($1)); }
 ;
 
 longstridlist1

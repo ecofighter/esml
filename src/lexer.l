@@ -25,6 +25,7 @@ digit [0-9]
 hexdigit [0-9a-fA-F]
 alphanumeric_id {letter}({letter}|{digit}|[_'])*
 symbolic_id {symbol}+
+qualified_id ({alphanumeric_id}\.)+({alphanumeric_id}|{symbolic_id}|"="|"*")
 tyvar "'"({letter}|{digit}|[_'])*
 
 %%
@@ -79,10 +80,10 @@ tyvar "'"({letter}|{digit}|[_'])*
 <INITIAL>":" { return COLON; }
 <INITIAL>";" { return SEMICOLON; }
 <INITIAL>"..." { return DOTDOTDOT; }
-<INITIAL>"." { return DOT; }
 <INITIAL>"_" { return UNDERBAR; }
 <INITIAL>"|" { return BAR; }
 <INITIAL>"=" { return EQUAL; }
+<INITIAL>"*" { return ASTERISK; }
 <INITIAL>"=>" { return DARROW; }
 <INITIAL>"->" { return ARROW; }
 <INITIAL>"#" { return HASH; }
@@ -93,6 +94,7 @@ tyvar "'"({letter}|{digit}|[_'])*
 <INITIAL>{tyvar} { return TYVAR; }
 <INITIAL>{alphanumeric_id} { return IDENTIFIER; }
 <INITIAL>{symbolic_id} { return IDENTIFIER; }
+<INITIAL>{qualified_id} { return QUALIFIED_IDENTIFIER; }
 
 <COMMENT>"(*" {
   comment_nest_level++;

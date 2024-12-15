@@ -7,14 +7,16 @@
 
 static void print_vid(FILE *out, VId *vid);
 static void print_vidlist(FILE *out, VIdList *vidlist, int indent);
+static void print_qualified_vid(FILE *out, QualifiedVId *qualified_vid);
 static void print_longvid(FILE *out, LongVId *longvid);
 static void print_tyvar(FILE *out, TyVar *tyvar);
 static void print_tyvarseq(FILE *out, TyVarSeq *tyvarseq);
 static void print_tycon(FILE *out, TyCon *tycon);
+static void print_qualified_tycon(FILE *out, QualifiedTyCon *qualified_tycon);
 static void print_longtycon(FILE *out, LongTyCon *longtycon);
 static void print_lab(FILE *out, Lab *lab);
 static void print_strid(FILE *out, StrId *strid);
-static void print_stridlist(FILE *out, StrIdList *stridlist);
+static void print_qualified_strid(FILE *out, QualifiedStrId *qualified_strid);
 static void print_longstrid(FILE *out, LongStrId *longstrid);
 static void print_longstridlist(FILE *out, LongStrIdList *longstridlist,
                                 int indent);
@@ -55,15 +57,17 @@ void print_vidlist(FILE *out, VIdList *vidlist, int indent) {
   }
 }
 
+void print_qualified_vid(FILE *out, QualifiedVId *qualified_vid) {
+  fprintf(out, "%s", qualified_vid->value);
+}
+
 void print_longvid(FILE *out, LongVId *longvid) {
   switch (longvid->kind) {
   case LONGVID_NONQUALIFIED:
     print_vid(out, longvid->u.nonqualified.vid);
     break;
   case LONGVID_QUALIFIED:
-    print_stridlist(out, longvid->u.qualified.strids);
-    fprintf(out, ".");
-    print_vid(out, longvid->u.qualified.vid);
+    print_qualified_vid(out, longvid->u.qualified.qualified_vid);
     break;
   }
 }
@@ -82,15 +86,17 @@ void print_tyvarseq(FILE *out, TyVarSeq *tyvarseq) {
 
 void print_tycon(FILE *out, TyCon *tycon) { fprintf(out, "%s", tycon->value); }
 
+void print_qualified_tycon(FILE *out, QualifiedTyCon *qualified_tycon) {
+  fprintf(out, "%s", qualified_tycon->value);
+}
+
 void print_longtycon(FILE *out, LongTyCon *longtycon) {
   switch (longtycon->kind) {
   case LONGTYCON_NONQUALIFIED:
     print_tycon(out, longtycon->u.nonqualified.tycon);
     break;
   case LONGTYCON_QUALIFIED:
-    print_stridlist(out, longtycon->u.qualified.strids);
-    fprintf(out, ".");
-    print_tycon(out, longtycon->u.qualified.tycon);
+    print_qualified_tycon(out, longtycon->u.qualified.qualified_tycon);
     break;
   }
 }
@@ -99,14 +105,8 @@ void print_lab(FILE *out, Lab *lab) { fprintf(out, "%s", lab->value); }
 
 void print_strid(FILE *out, StrId *strid) { fprintf(out, "%s", strid->value); }
 
-void print_stridlist(FILE *out, StrIdList *stridlist) {
-  if (stridlist == NULL)
-    return;
-  if (stridlist->upper) {
-    print_stridlist(out, stridlist->upper);
-    fprintf(out, ".");
-  }
-  print_strid(out, stridlist->strid);
+void print_qualified_strid(FILE *out, QualifiedStrId *qualified_strid) {
+  fprintf(out, "%s", qualified_strid->value);
 }
 
 void print_longstrid(FILE *out, LongStrId *longstrid) {
@@ -115,9 +115,7 @@ void print_longstrid(FILE *out, LongStrId *longstrid) {
     print_strid(out, longstrid->u.nonqualified.strid);
     break;
   case LONGSTRID_QUALIFIED:
-    print_stridlist(out, longstrid->u.qualified.strids);
-    fprintf(out, ".");
-    print_strid(out, longstrid->u.qualified.strid);
+    print_qualified_strid(out, longstrid->u.qualified.qualified_strid);
     break;
   }
 }
