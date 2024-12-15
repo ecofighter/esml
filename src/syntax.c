@@ -904,6 +904,7 @@ void free_conbind(ConBind *conbind) {
 ExBind *new_exbind_declaration(int op_prefixed, VId *vid, Ty *ty,
                                ExBind *next) {
   ExBind *exbind = (ExBind *)malloc(sizeof(ExBind));
+  exbind->kind = EXBIND_DECLARATION;
   exbind->u.declaration.op_prefixed = op_prefixed;
   exbind->u.declaration.vid = vid;
   exbind->u.declaration.ty = ty;
@@ -915,6 +916,7 @@ ExBind *new_exbind_replication(int op_prefixed_vid, VId *vid,
                                int op_prefixed_longvid, LongVId *longvid,
                                ExBind *next) {
   ExBind *exbind = (ExBind *)malloc(sizeof(ExBind));
+  exbind->kind = EXBIND_REPLICATION;
   exbind->u.replication.op_prefixed_vid = op_prefixed_vid;
   exbind->u.replication.vid = vid;
   exbind->u.replication.op_prefixed_longvid = op_prefixed_longvid;

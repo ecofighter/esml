@@ -566,7 +566,7 @@ void print_exbind(FILE *out, ExBind *exbind, int indent) {
       fprintf(out, "op ");
     }
     print_vid(out, exbind->u.declaration.vid);
-    if (exbind->u.declaration.ty) {
+    if (exbind->u.declaration.ty != NULL) {
       fprintf(out, " of ");
       print_ty(out, exbind->u.declaration.ty, indent);
     }
