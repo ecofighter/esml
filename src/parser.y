@@ -206,6 +206,10 @@ vid
     { char *eq = (char *)malloc(2);
       eq[0] = '='; eq[1] = '\0';
       $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, eq))); }
+| ASTERISK
+    { char *asterisk = (char *)malloc(2);
+      asterisk[0] = '*'; asterisk[1] = '\0';
+      $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, asterisk))); }
 ;
 
 vid_list1
@@ -230,6 +234,10 @@ longvid
 vid_bind
 : identifier
     { $$ = (VId *)parse_state_register_node(state, new_vid($1)); }
+| ASTERISK
+    { char *asterisk = (char *)malloc(2);
+      asterisk[0] = '*'; asterisk[1] = '\0';
+      $$ = (VId *)parse_state_register_node(state, new_vid((char *)parse_state_register_node(state, asterisk))); }
 ;
 
 longvid_bind
