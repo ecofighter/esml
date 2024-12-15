@@ -8,9 +8,7 @@
 #define YY_USER_ACTION                                                                \
   yylloc->first_line = yylloc->last_line = yylineno; yylloc->first_column = yycolumn; \
   if (yylineno == yylloc->first_line) yycolumn += yyleng;                             \
-  else {                                                                              \
-    for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {}              \
-  }
+  else { for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {} }
 %}
 
 %option always-interactive

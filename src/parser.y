@@ -1,4 +1,4 @@
-%{
+%code top {
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -6,7 +6,7 @@
 #include "parse_state.h"
 #include "parser.h"
 #include "lexer.h"
-%}
+}
 %code provides {
 extern int parse_stdin(ParseState *state);
 }
@@ -535,6 +535,7 @@ exbind
 %%
 
 void yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParseState *state, char *msg) {
+    parse_state_register_error(state, msg, yylloc->first_line, yylloc->first_column);
     return;
 }
 

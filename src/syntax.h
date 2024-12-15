@@ -62,21 +62,21 @@ typedef struct ConBind ConBind;
 struct ExBind;
 typedef struct ExBind ExBind;
 
-typedef struct VId {
+struct VId {
   char *value;
-} VId;
+};
 
-typedef struct VIdList {
+struct VIdList {
   VId *vid;
   VIdList *next;
-} VIdList;
+};
 
 typedef enum LongVIdKind {
   LONGVID_NONQUALIFIED,
   LONGVID_QUALIFIED,
 } LongVIdKind;
 
-typedef struct LongVId {
+struct LongVId {
   LongVIdKind kind;
   union {
     struct {
@@ -87,27 +87,27 @@ typedef struct LongVId {
       VId *vid;
     } qualified;
   } u;
-} LongVId;
+};
 
-typedef struct TyVar {
+struct TyVar {
   char *value;
-} TyVar;
+};
 
-typedef struct TyVarSeq {
+struct TyVarSeq {
   TyVar *tyvar;
   TyVarSeq *next;
-} TyVarSeq;
+};
 
-typedef struct TyCon {
+struct TyCon {
   char *value;
-} TyCon;
+};
 
 typedef enum LongTyConKind {
   LONGTYCON_NONQUALIFIED,
   LONGTYCON_QUALIFIED,
 } LongTyConKind;
 
-typedef struct LongTyCon {
+struct LongTyCon {
   LongTyConKind kind;
   union {
     struct {
@@ -118,33 +118,33 @@ typedef struct LongTyCon {
       TyCon *tycon;
     } qualified;
   } u;
-} LongTyCon;
+};
 
 typedef enum LabKind {
   LAB_ALPHANUMERIC,
   LAB_NUMERIC,
 } LabKind;
 
-typedef struct Lab {
+struct Lab {
   LabKind kind;
   char *value;
-} Lab;
+};
 
-typedef struct StrId {
+struct StrId {
   char *value;
-} StrId;
+};
 
-typedef struct StrIdList {
+struct StrIdList {
   StrIdList *upper;
   StrId *strid;
-} StrIdList;
+};
 
 typedef enum LongStrIdKind {
   LONGSTRID_NONQUALIFIED,
   LONGSTRID_QUALIFIED,
 } LongStrIdKind;
 
-typedef struct LongStrId {
+struct LongStrId {
   LongStrIdKind kind;
   union {
     struct {
@@ -155,23 +155,23 @@ typedef struct LongStrId {
       StrId *strid;
     } qualified;
   } u;
-} LongStrId;
+};
 
-typedef struct LongStrIdList {
+struct LongStrIdList {
   LongStrId *longstrid;
   LongStrIdList *next;
-} LongStrIdList;
+};
 
 typedef enum ConstantKind {
   CONSTANT_INTEGER,
 } ConstantKind;
 
-typedef struct Constant {
+struct Constant {
   ConstantKind kind;
   union {
     char *value;
   } u;
-} Constant;
+};
 
 typedef enum AtPatKind {
   ATPAT_WILDCARD,
@@ -181,7 +181,7 @@ typedef enum AtPatKind {
   ATPAT_PARENED_PAT,
 } AtPatKind;
 
-typedef struct AtPat {
+struct AtPat {
   AtPatKind kind;
   union {
     /* wildcard */
@@ -199,14 +199,14 @@ typedef struct AtPat {
       Pat *pat;
     } parened_pat;
   } u;
-} AtPat;
+};
 
 typedef enum PatRowKind {
   PATROW_WILDCARD,
   PATROW_PATTERN_ROW,
 } PatRowKind;
 
-typedef struct PatRow {
+struct PatRow {
   PatRowKind kind;
   union {
     /* wildcard */
@@ -216,7 +216,7 @@ typedef struct PatRow {
       PatRow *next;
     } pattern_row;
   } u;
-} PatRow;
+};
 
 typedef enum PatKind {
   PAT_ATOMIC,
@@ -226,7 +226,7 @@ typedef enum PatKind {
   PAT_LAYERED,
 } PatKind;
 
-typedef struct Pat {
+struct Pat {
   PatKind kind;
   union {
     struct {
@@ -253,7 +253,7 @@ typedef struct Pat {
       Pat *pat;
     } layered;
   } u;
-} Pat;
+};
 
 typedef enum TyKind {
   TY_TYPE_VARIABLE,
@@ -263,7 +263,7 @@ typedef enum TyKind {
   TY_PARENED_TY,
 } TyKind;
 
-typedef struct Ty {
+struct Ty {
   TyKind kind;
   union {
     struct {
@@ -284,18 +284,18 @@ typedef struct Ty {
       Ty *ty;
     } parened_ty;
   } u;
-} Ty;
+};
 
-typedef struct TySeq {
+struct TySeq {
   Ty *ty;
   TySeq *next;
-} TySeq;
+};
 
-typedef struct TyRow {
+struct TyRow {
   Lab *lab;
   Ty *ty;
   TyRow *next;
-} TyRow;
+};
 
 typedef enum AtExpKind {
   ATEXP_SPECIAL_CONSTANT,
@@ -305,7 +305,7 @@ typedef enum AtExpKind {
   ATEXP_PARENED_EXP,
 } AtExpKind;
 
-typedef struct AtExp {
+struct AtExp {
   AtExpKind kind;
   union {
     struct {
@@ -326,13 +326,13 @@ typedef struct AtExp {
       Exp *exp;
     } parened_exp;
   } u;
-} AtExp;
+};
 
-typedef struct ExpRow {
+struct ExpRow {
   Lab *lab;
   Exp *exp;
   ExpRow *next;
-} ExpRow;
+};
 
 typedef enum ExpKind {
   EXP_ATOMIC,
@@ -344,7 +344,7 @@ typedef enum ExpKind {
   EXP_FUNCTION,
 } ExpKind;
 
-typedef struct Exp {
+struct Exp {
   ExpKind kind;
   union {
     struct {
@@ -374,17 +374,17 @@ typedef struct Exp {
       Match *match;
     } function;
   } u;
-} Exp;
+};
 
-typedef struct Match {
+struct Match {
   Mrule *mrule;
   Match *next;
-} Match;
+};
 
-typedef struct Mrule {
+struct Mrule {
   Pat *pat;
   Exp *exp;
-} Mrule;
+};
 
 typedef enum DecKind {
   DEC_VALUE_DECLARATION,
@@ -402,7 +402,7 @@ typedef enum DecKind {
   DEC_NONFIX_DIRECTIVE,
 } DecKind;
 
-typedef struct Dec {
+struct Dec {
   DecKind kind;
   union {
     struct {
@@ -449,14 +449,14 @@ typedef struct Dec {
       VIdList *vidlist;
     } nonfix_directive;
   } u;
-} Dec;
+};
 
 typedef enum ValBindKind {
   VALBIND_BIND,
   VALBIND_REC,
 } ValBindKind;
 
-typedef struct ValBind {
+struct ValBind {
   ValBindKind kind;
   union {
     struct {
@@ -468,35 +468,35 @@ typedef struct ValBind {
       ValBind *valbind;
     } rec;
   } u;
-} ValBind;
+};
 
-typedef struct TypBind {
+struct TypBind {
   TyVarSeq *tyvarseq;
   TyCon *tycon;
   Ty *ty;
   TypBind *next;
-} TypBind;
+};
 
-typedef struct DatBind {
+struct DatBind {
   TyVarSeq *tyvarseq;
   TyCon *tycon;
   ConBind *conbind;
   DatBind *next;
-} DatBind;
+};
 
-typedef struct ConBind {
+struct ConBind {
   int op_prefixed;
   VId *vid;
   Ty *ty;
   ConBind *next;
-} ConBind;
+};
 
 typedef enum ExBindKind {
   EXBIND_DECLARATION,
   EXBIND_REPLICATION,
 } ExBindKind;
 
-typedef struct ExBind {
+struct ExBind {
   ExBindKind kind;
   union {
     struct {
@@ -512,7 +512,7 @@ typedef struct ExBind {
     } replication;
   } u;
   ExBind *next;
-} ExBind;
+};
 
 VId *new_vid(char *value);
 void free_vid(VId *vid);

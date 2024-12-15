@@ -34,7 +34,7 @@ add_executable(esml ${SRCS} ${LEXER_OUTPUT} ${PARSER_OUTPUT})
 target_include_directories(esml PRIVATE "${SRC_DIR}")
 target_include_directories(esml PRIVATE "${PARSER_DIR}")
 set_property(TARGET esml PROPERTY C_EXTENSIONS OFF)
-set_property(TARGET esml PROPERTY C_STANDARD 11)
+set_property(TARGET esml PROPERTY C_STANDARD 99)
 
 # enable_testing()
 # set(TEST_DIR "test")

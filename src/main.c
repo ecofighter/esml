@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     return 0;
   } else {
     printf("\nParsing failed.\n");
+    parse_state_print_errors(state, stderr);
     parse_state_free(state);
     return 1;
   }

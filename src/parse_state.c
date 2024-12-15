@@ -6,28 +6,31 @@
 
 #define INITIAL_CAPACITY 16
 
-typedef struct MemoryTracker {
+typedef struct MemoryTracker MemoryTracker;
+struct MemoryTracker {
   void **ptrs;
   size_t count;
   size_t capacity;
-} MemoryTracker;
+};
 
 static MemoryTracker *memory_tracker_create(void);
 static void memory_tracker_free(MemoryTracker *tracker);
 static void track_malloc(MemoryTracker *tracker, void *ptr);
 static void cleanup_memory(MemoryTracker *tracker);
 
-typedef struct ParseError {
+typedef struct ParseError ParseError;
+struct ParseError {
   char *message;
   int line;
   int column;
-} ParseError;
+};
 
-typedef struct ErrorList {
+typedef struct ErrorList ErrorList;
+struct ErrorList {
   ParseError *errors;
   size_t count;
   size_t capacity;
-} ErrorList;
+};
 
 static ErrorList *error_list_create(void);
 static void error_list_free(ErrorList *list);
@@ -106,17 +109,17 @@ static void error_list_print(const ErrorList *list, FILE *stream) {
   }
 }
 
-typedef struct ParseState {
+struct ParseState {
   MemoryTracker *tracker;
-  ErrorList *errorlist;
+  ErrorList *error_list;
   Dec *result;
   char *filename;
-} ParseState;
+};
 
 ParseState *parse_state_create(const char *filename) {
   ParseState *state = (ParseState *)malloc(sizeof(ParseState));
   state->tracker = memory_tracker_create();
-  state->errorlist = error_list_create();
+  state->error_list = error_list_create();
   state->result = NULL;
   size_t filename_len = strlen(filename);
   state->filename = (char *)malloc(filename_len + 1);
@@ -127,7 +130,7 @@ ParseState *parse_state_create(const char *filename) {
 
 void parse_state_free(ParseState *state) {
   memory_tracker_free(state->tracker);
-  error_list_free(state->errorlist);
+  error_list_free(state->error_list);
   free(state->filename);
   free(state);
 }
@@ -139,7 +142,7 @@ void *parse_state_register_node(ParseState *state, void *ptr) {
 
 void parse_state_register_error(ParseState *state, const char *message,
                                 int line, int column) {
-  error_list_add(state->errorlist, message, line, column);
+  error_list_add(state->error_list, message, line, column);
 }
 
 void parse_state_cleanup_partial(ParseState *state) {
@@ -156,5 +159,5 @@ Dec *parse_state_get_result(ParseState *state) { return state->result; }
 
 void parse_state_print_errors(ParseState *state, FILE *stream) {
   fprintf(stream, "Errors in file %s:\n", state->filename);
-  error_list_print(state->errorlist, stream);
+  error_list_print(state->error_list, stream);
 }
