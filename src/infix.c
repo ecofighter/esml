@@ -1,19 +1,11 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define TABLE_INITIAL_CAPACITY 32
+#include "infix.h"
 
-typedef enum Direction {
-  Leftfix,
-  Rightfix,
-  Nonfix,
-} Direction;
-
-typedef struct Fixity {
-  int prec;
-  Direction direction;
-} Fixity;
+#define TABLE_INITIAL_CAPACITY 16
 
 typedef struct Entry Entry;
 struct Entry {
@@ -22,11 +14,15 @@ struct Entry {
   Entry *next;
 };
 
-typedef struct OpTable OpTable;
-struct OpTable {
+struct InfixTable {
   Entry **buckets;
   size_t capacity;
   size_t size;
+};
+
+struct InfixTableList {
+  InfixTable *current;
+  InfixTableList *next;
 };
 
 static uint64_t hash_key(const char *key) {
@@ -41,7 +37,7 @@ static uint64_t hash_key(const char *key) {
   return hash;
 }
 
-static Entry *entry_create(const char *key, int prec, Direction direction) {
+static Entry *entry_create(const char *key, int prec, Assoc assoc) {
   Entry *entry = (Entry *)malloc(sizeof(Entry));
   if (entry == NULL) {
     return NULL;
@@ -58,13 +54,13 @@ static Entry *entry_create(const char *key, int prec, Direction direction) {
 
   entry->key = (const char *)tmpkey;
   entry->fixity.prec = prec;
-  entry->fixity.direction = direction;
+  entry->fixity.assoc = assoc;
   entry->next = NULL;
   return entry;
 }
 
-OpTable *optable_create(void) {
-  OpTable *table = (OpTable *)malloc(sizeof(OpTable));
+InfixTable *infixtable_create(void) {
+  InfixTable *table = (InfixTable *)malloc(sizeof(InfixTable));
   if (table == NULL) {
     return NULL;
   }
@@ -81,7 +77,7 @@ OpTable *optable_create(void) {
   return table;
 }
 
-void optable_free(OpTable *table) {
+void infixtable_free(InfixTable *table) {
   if (table == NULL) {
     return;
   }
@@ -99,10 +95,10 @@ void optable_free(OpTable *table) {
   free(table);
 }
 
-static int optable_resize(OpTable *table, size_t new_capacity) {
+static bool infixtable_resize(InfixTable *table, size_t new_capacity) {
   Entry **new_buckets = calloc(new_capacity, sizeof(Entry *));
   if (new_buckets == NULL) {
-    return 0;
+    return false;
   }
 
   for (size_t i = 0; i < table->capacity; i++) {
@@ -120,10 +116,54 @@ static int optable_resize(OpTable *table, size_t new_capacity) {
   free(table->buckets);
   table->buckets = new_buckets;
   table->capacity = new_capacity;
-  return 1;
+  return true;
 }
 
-const Fixity *optable_get(OpTable *table, const char *key) {
+InfixTable *infixtable_clone(const InfixTable *table) {
+  if (table == NULL) {
+    return NULL;
+  }
+
+  InfixTable *new_table = infixtable_create();
+  if (new_table == NULL) {
+    return NULL;
+  }
+
+  if (table->capacity > TABLE_INITIAL_CAPACITY) {
+    if (!infixtable_resize(new_table, table->capacity)) {
+      infixtable_free(new_table);
+      return NULL;
+    }
+  }
+
+  for (size_t i = 0; i < table->capacity; i++) {
+    Entry *current = table->buckets[i];
+    Entry *prev = NULL;
+
+    while (current != NULL) {
+      Entry *new_entry = entry_create(current->key, current->fixity.prec,
+                                      current->fixity.assoc);
+      if (new_entry == NULL) {
+        infixtable_free(new_table);
+        return NULL;
+      }
+
+      if (prev == NULL) {
+        new_table->buckets[i] = new_entry;
+      } else {
+        prev->next = new_entry;
+      }
+
+      prev = new_entry;
+      current = current->next;
+    }
+  }
+
+  new_table->size = table->size;
+  return new_table;
+}
+
+const Fixity *infixtable_get(InfixTable *table, const char *key) {
   if (table == NULL || key == NULL) {
     return NULL;
   }
@@ -142,17 +182,16 @@ const Fixity *optable_get(OpTable *table, const char *key) {
   return NULL;
 }
 
-int optable_set(OpTable *table, const char *key, int prec,
-                Direction direction) {
+bool infixtable_set(InfixTable *table, const char *key, int prec, Assoc assoc) {
   if (table == NULL || key == NULL) {
-    return 0;
+    return false;
   }
 
   if (table->size >= table->capacity * 0.75) {
     size_t new_capacity = table->capacity * 2;
     if (new_capacity < table->capacity ||
-        !optable_resize(table, new_capacity)) {
-      return 0;
+        !infixtable_resize(table, new_capacity)) {
+      return false;
     }
   }
 
@@ -163,30 +202,30 @@ int optable_set(OpTable *table, const char *key, int prec,
   while (current != NULL) {
     if (strcmp(current->key, key) == 0) {
       current->fixity.prec = prec;
-      current->fixity.direction = direction;
-      return 1;
+      current->fixity.assoc = assoc;
+      return true;
     }
     current = current->next;
   }
 
-  Entry *new_entry = entry_create(key, prec, direction);
+  Entry *new_entry = entry_create(key, prec, assoc);
   if (new_entry == NULL) {
-    return 0;
+    return false;
   }
 
   new_entry->next = table->buckets[index];
   table->buckets[index] = new_entry;
   table->size++;
 
-  return 1;
+  return true;
 }
 
-int optable_delete(OpTable *table, const char *key) {
+bool infixtable_delete(InfixTable *table, const char *key) {
   if (table == NULL || key == NULL) {
-    return 0;
+    return false;
   }
 
-  int deleted = 0;
+  bool deleted = false;
   uint64_t hash = hash_key(key);
   size_t index = (size_t)(hash & (uint64_t)(table->capacity - 1));
 
@@ -203,11 +242,79 @@ int optable_delete(OpTable *table, const char *key) {
       free((char *)current->key);
       free(current);
       table->size--;
-      deleted = 1;
+      deleted = true;
+      break;
     }
     prev = current;
     current = current->next;
   }
 
   return deleted;
+}
+
+InfixTableList *infixtablelist_create(void) {
+  InfixTableList *list = (InfixTableList *)malloc(sizeof(InfixTableList));
+  if (list == NULL) {
+    return NULL;
+  }
+  list->current = infixtable_create();
+  if (list->current == NULL) {
+    free(list);
+    return NULL;
+  }
+  list->next = NULL;
+  return list;
+}
+
+void infixtablelist_free(InfixTableList *list) {
+  if (list == NULL) {
+    return;
+  }
+
+  InfixTableList *current = list;
+  while (current != NULL) {
+    InfixTableList *next = current->next;
+    infixtable_free(current->current);
+    free(current);
+    current = next;
+  }
+}
+
+bool infixtablelist_push(InfixTableList *list, const InfixTable *table) {
+  if (list == NULL || table == NULL) {
+    return false;
+  }
+  InfixTableList *next = (InfixTableList *)malloc(sizeof(InfixTableList));
+  if (next == NULL) {
+    return false;
+  }
+  next->current = list->current;
+  next->next = list->next;
+  InfixTable *new_table = infixtable_clone(table);
+  if (new_table == NULL) {
+    free(next);
+    return false;
+  }
+  list->current = new_table;
+  list->next = next;
+  return true;
+}
+
+InfixTable *infixtablelist_pop(InfixTableList *list) {
+  if (list == NULL) {
+    return NULL;
+  }
+  InfixTable *table = list->current;
+  InfixTableList *next = list->next;
+  list->current = next->current;
+  list->next = next->next;
+  free(next);
+  return table;
+}
+
+InfixTable *infixtablelist_clone_top(InfixTableList *list) {
+  if (list == NULL) {
+    return NULL;
+  }
+  return infixtable_clone(list->current);
 }

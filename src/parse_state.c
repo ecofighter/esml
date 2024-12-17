@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,28 +111,51 @@ static void error_list_print(const ErrorList *list, FILE *stream) {
 }
 
 struct ParseState {
+  const char *filename;
   MemoryTracker *tracker;
   ErrorList *error_list;
-  Dec *result;
-  char *filename;
+  CDec *result;
 };
 
 ParseState *parse_state_create(const char *filename) {
   ParseState *state = (ParseState *)malloc(sizeof(ParseState));
+  if (state == NULL) {
+    return NULL;
+  }
+  {
+    size_t filename_len = strlen(filename);
+    char *tmpfilename = (char *)malloc(filename_len + 1);
+    if (tmpfilename == NULL) {
+      free(state);
+      return NULL;
+    }
+    memcpy(tmpfilename, filename, filename_len);
+    tmpfilename[filename_len] = '\0';
+    state->filename = (const char *)tmpfilename;
+  }
+
   state->tracker = memory_tracker_create();
+  if (state->tracker == NULL) {
+    free((char *)state->filename);
+    free(state);
+    return NULL;
+  }
+
   state->error_list = error_list_create();
+  if (state->error_list == NULL) {
+    free((char *)state->filename);
+    memory_tracker_free(state->tracker);
+    free(state);
+    return NULL;
+  }
   state->result = NULL;
-  size_t filename_len = strlen(filename);
-  state->filename = (char *)malloc(filename_len + 1);
-  memcpy(state->filename, filename, filename_len);
-  state->filename[filename_len] = '\0';
   return state;
 }
 
 void parse_state_free(ParseState *state) {
+  free((char *)state->filename);
   memory_tracker_free(state->tracker);
   error_list_free(state->error_list);
-  free(state->filename);
   free(state);
 }
 
@@ -151,11 +175,11 @@ void parse_state_cleanup_partial(ParseState *state) {
   state->result = NULL;
 }
 
-void parse_state_set_result(ParseState *state, Dec *result) {
+void parse_state_set_result(ParseState *state, CDec *result) {
   state->result = result;
 }
 
-Dec *parse_state_get_result(ParseState *state) { return state->result; }
+CDec *parse_state_get_result(ParseState *state) { return state->result; }
 
 void parse_state_print_errors(ParseState *state, FILE *stream) {
   fprintf(stream, "Errors in file %s:\n", state->filename);

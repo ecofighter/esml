@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "syntax.h"
+#include "concrete_syntax.h"
 
 struct ParseState;
 typedef struct ParseState ParseState;
@@ -14,8 +14,8 @@ void *parse_state_register_node(ParseState *state, void *ptr);
 void parse_state_register_error(ParseState *state, const char *message,
                                 int line, int column);
 void parse_state_cleanup_partial(ParseState *state);
-void parse_state_set_result(ParseState *state, Dec *result);
-Dec *parse_state_get_result(ParseState *state);
+void parse_state_set_result(ParseState *state, CDec *result);
+CDec *parse_state_get_result(ParseState *state);
 void parse_state_print_errors(ParseState *state, FILE *stream);
 
 #endif // PARSE_STATE_H
