@@ -56,13 +56,11 @@ struct CQualifiedVId {
   char *value;
 };
 
-typedef enum CLongVIdKind {
-  CLONGVID_NONQUALIFIED,
-  CLONGVID_QUALIFIED,
-} CLongVIdKind;
-
 struct CLongVId {
-  CLongVIdKind kind;
+  enum {
+    CLONGVID_NONQUALIFIED,
+    CLONGVID_QUALIFIED,
+  } kind;
   union {
     struct {
       CVId *vid;
@@ -90,13 +88,11 @@ struct CQualifiedTyCon {
   char *value;
 };
 
-typedef enum CLongTyConKind {
-  CLONGTYCON_NONQUALIFIED,
-  CLONGTYCON_QUALIFIED,
-} CLongTyConKind;
-
 struct CLongTyCon {
-  CLongTyConKind kind;
+  enum {
+    CLONGTYCON_NONQUALIFIED,
+    CLONGTYCON_QUALIFIED,
+  } kind;
   union {
     struct {
       CTyCon *tycon;
@@ -107,13 +103,11 @@ struct CLongTyCon {
   } u;
 };
 
-typedef enum CLabKind {
-  CLAB_ALPHANUMERIC,
-  CLAB_NUMERIC,
-} CLabKind;
-
 struct CLab {
-  CLabKind kind;
+  enum {
+    CLAB_ALPHANUMERIC,
+    CLAB_NUMERIC,
+  } kind;
   char *value;
 };
 
@@ -125,13 +119,11 @@ struct CQualifiedStrId {
   char *value;
 };
 
-typedef enum CLongStrIdKind {
-  CLONGSTRID_NONQUALIFIED,
-  CLONGSTRID_QUALIFIED,
-} CLongStrIdKind;
-
 struct CLongStrId {
-  CLongStrIdKind kind;
+  enum {
+    CLONGSTRID_NONQUALIFIED,
+    CLONGSTRID_QUALIFIED,
+  } kind;
   union {
     struct {
       CStrId *strid;
@@ -147,30 +139,27 @@ struct CLongStrIdList {
   CLongStrIdList *next;
 };
 
-typedef enum CConstantKind {
-  CCONSTANT_INTEGER,
-} CConstantKind;
-
 struct CConstant {
-  CConstantKind kind;
+  enum {
+    CCONSTANT_INTEGER,
+
+  } kind;
   union {
     char *value;
   } u;
 };
 
-typedef enum CAtPatKind {
-  CATPAT_WILDCARD,
-  CATPAT_SPECIAL_CONSTANT,
-  CATPAT_VALUE_IDENTIFIER,
-  CATPAT_RECORD,
-  CATPAT_ZERO_TUPLE,
-  CATPAT_N_TUPLE,
-  CATPAT_LIST,
-  CATPAT_PARENED_PAT,
-} CAtPatKind;
-
 struct CAtPat {
-  CAtPatKind kind;
+  enum {
+    CATPAT_WILDCARD,
+    CATPAT_SPECIAL_CONSTANT,
+    CATPAT_VALUE_IDENTIFIER,
+    CATPAT_RECORD,
+    CATPAT_ZERO_TUPLE,
+    CATPAT_N_TUPLE,
+    CATPAT_LIST,
+    CATPAT_PARENED_PAT,
+  } kind;
   union {
     /* wildcard */
     struct {
@@ -201,14 +190,12 @@ struct CAtPatList {
   CAtPatList *next;
 };
 
-typedef enum CPatRowKind {
-  CPATROW_WILDCARD,
-  CPATROW_PATTERN_ROW,
-  CPATROW_LABEL_AS_VARIABLE,
-} CPatRowKind;
-
 struct CPatRow {
-  CPatRowKind kind;
+  enum {
+    CPATROW_WILDCARD,
+    CPATROW_PATTERN_ROW,
+    CPATROW_LABEL_AS_VARIABLE,
+  } kind;
   union {
     /* wildcard */
     struct {
@@ -225,15 +212,13 @@ struct CPatRow {
   } u;
 };
 
-typedef enum CPatKind {
-  CPAT_ATOMIC,
-  CPAT_ATPATLIST,
-  CPAT_TYPED,
-  CPAT_LAYERED,
-} CPatKind;
-
 struct CPat {
-  CPatKind kind;
+  enum {
+    CPAT_ATOMIC,
+    CPAT_ATPATLIST,
+    CPAT_TYPED,
+    CPAT_LAYERED,
+  } kind;
   union {
     struct {
       CAtPat *atpat;
@@ -259,17 +244,15 @@ struct CPatList {
   CPatList *next;
 };
 
-typedef enum CTyKind {
-  CTY_TYPE_VARIABLE,
-  CTY_RECORD_TYPE_EXPRESSION,
-  CTY_TYPE_CONSTRUCTION,
-  CTY_TUPLE_TYPE,
-  CTY_FUNCTION_TYPE_EXPRESSION,
-  CTY_PARENED_TY,
-} CTyKind;
-
 struct CTy {
-  CTyKind kind;
+  enum {
+    CTY_TYPE_VARIABLE,
+    CTY_RECORD_TYPE_EXPRESSION,
+    CTY_TYPE_CONSTRUCTION,
+    CTY_TUPLE_TYPE,
+    CTY_FUNCTION_TYPE_EXPRESSION,
+    CTY_PARENED_TY,
+  } kind;
   union {
     struct {
       CTyVar *tyvar;
@@ -305,21 +288,19 @@ struct CTyRow {
   CTyRow *next;
 };
 
-typedef enum CAtExpKind {
-  CATEXP_SPECIAL_CONSTANT,
-  CATEXP_VALUE_IDENTIFIER,
-  CATEXP_RECORD,
-  CATEXP_RECORD_SELECTOR,
-  CATEXP_ZERO_TUPLE,
-  CATEXP_N_TUPLE,
-  CATEXP_LIST,
-  CATEXP_SEQUENCE,
-  CATEXP_LOCAL_DECLARATION,
-  CATEXP_PARENED_EXP,
-} CAtExpKind;
-
 struct CAtExp {
-  CAtExpKind kind;
+  enum {
+    CATEXP_SPECIAL_CONSTANT,
+    CATEXP_VALUE_IDENTIFIER,
+    CATEXP_RECORD,
+    CATEXP_RECORD_SELECTOR,
+    CATEXP_ZERO_TUPLE,
+    CATEXP_N_TUPLE,
+    CATEXP_LIST,
+    CATEXP_SEQUENCE,
+    CATEXP_LOCAL_DECLARATION,
+    CATEXP_PARENED_EXP,
+  } kind;
   union {
     struct {
       CConstant *scon;
@@ -365,22 +346,20 @@ struct CExpRow {
   CExpRow *next;
 };
 
-typedef enum CExpKind {
-  CEXP_ATOMIC,
-  CEXP_ATEXPLIST,
-  CEXP_TYPED,
-  CEXP_CONJUNCTION,
-  CEXP_DISJUNCTION,
-  CEXP_HANDLE_EXCEPTION,
-  CEXP_RAISE_EXCEPTION,
-  CEXP_CONDITIONAL,
-  CEXP_ITERATION,
-  CEXP_CASE_ANALYSIS,
-  CEXP_FUNCTION,
-} CExpKind;
-
 struct CExp {
-  CExpKind kind;
+  enum {
+    CEXP_ATOMIC,
+    CEXP_ATEXPLIST,
+    CEXP_TYPED,
+    CEXP_CONJUNCTION,
+    CEXP_DISJUNCTION,
+    CEXP_HANDLE_EXCEPTION,
+    CEXP_RAISE_EXCEPTION,
+    CEXP_CONDITIONAL,
+    CEXP_ITERATION,
+    CEXP_CASE_ANALYSIS,
+    CEXP_FUNCTION,
+  } kind;
   union {
     struct {
       CAtExp *atexp;
@@ -441,25 +420,23 @@ struct CMrule {
   CExp *exp;
 };
 
-typedef enum CDecKind {
-  CDEC_VALUE_DECLARATION,
-  CDEC_FUNCTION_DECLARATION,
-  CDEC_TYPE_DECLARATION,
-  CDEC_DATATYPE_DECLARATION,
-  CDEC_DATATYPE_REPLICATION,
-  CDEC_ABSTYPE_DECLARATION,
-  CDEC_EXCEPTION_DECLARATION,
-  CDEC_LOCAL_DECLARATION,
-  CDEC_OPEN_DECLARATION,
-  CDEC_EMPTY_DECLARATION,
-  CDEC_SEQUENTIAL_DECLARATION,
-  CDEC_INFIX_L_DIRECTIVE,
-  CDEC_INFIX_R_DIRECTIVE,
-  CDEC_NONFIX_DIRECTIVE,
-} CDecKind;
-
 struct CDec {
-  CDecKind kind;
+  enum {
+    CDEC_VALUE_DECLARATION,
+    CDEC_FUNCTION_DECLARATION,
+    CDEC_TYPE_DECLARATION,
+    CDEC_DATATYPE_DECLARATION,
+    CDEC_DATATYPE_REPLICATION,
+    CDEC_ABSTYPE_DECLARATION,
+    CDEC_EXCEPTION_DECLARATION,
+    CDEC_LOCAL_DECLARATION,
+    CDEC_OPEN_DECLARATION,
+    CDEC_EMPTY_DECLARATION,
+    CDEC_SEQUENTIAL_DECLARATION,
+    CDEC_INFIX_L_DIRECTIVE,
+    CDEC_INFIX_R_DIRECTIVE,
+    CDEC_NONFIX_DIRECTIVE,
+  } kind;
   union {
     struct {
       CTyVarList *tyvarseq;
@@ -513,13 +490,11 @@ struct CDec {
   } u;
 };
 
-typedef enum CValBindKind {
-  CVALBIND_BIND,
-  CVALBIND_REC,
-} CValBindKind;
-
 struct CValBind {
-  CValBindKind kind;
+  enum {
+    CVALBIND_BIND,
+    CVALBIND_REC,
+  } kind;
   union {
     struct {
       CPat *pat;
@@ -569,13 +544,11 @@ struct CConBind {
   CConBind *next;
 };
 
-typedef enum CExBindKind {
-  CEXBIND_DECLARATION,
-  CEXBIND_REPLICATION,
-} CExBindKind;
-
 struct CExBind {
-  CExBindKind kind;
+  enum {
+    CEXBIND_DECLARATION,
+    CEXBIND_REPLICATION,
+  } kind;
   union {
     struct {
       bool op_prefixed;
@@ -730,4 +703,5 @@ CExBind *new_c_exbind_replication(bool op_prefixed_vid, CVId *vid,
                                   bool op_prefixed_longvid, CLongVId *longvid,
                                   CExBind *next);
 void free_c_exbind(CExBind *exbind);
+
 #endif // CONCRETE_SYNTAX_H
