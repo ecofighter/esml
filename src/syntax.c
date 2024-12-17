@@ -223,6 +223,28 @@ void free_strid(StrId *strid) {
   free(strid);
 }
 
+StrIdList *new_stridlist(StrId *strid, StrIdList *next) {
+  StrIdList *stridlist = (StrIdList *)malloc(sizeof(StrIdList));
+  if (stridlist == NULL) {
+    return NULL;
+  }
+  stridlist->strid = strid;
+  stridlist->next = next;
+  return stridlist;
+}
+
+void free_stridlist(StrIdList *stridlist) {
+  if (stridlist == NULL) {
+    return;
+  }
+  free_strid(stridlist->strid);
+  StrIdList *tmp = stridlist->next;
+  free(stridlist);
+  if (tmp != NULL) {
+    free_stridlist(tmp);
+  }
+}
+
 LongStrId *new_longstrid_nonqualified(StrId *strid) {
   LongStrId *longstrid = (LongStrId *)malloc(sizeof(LongStrId));
   if (longstrid == NULL) {
