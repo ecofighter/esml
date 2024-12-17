@@ -261,7 +261,7 @@ struct CTy {
       CTyRow *tyrow;
     } record_type_expression;
     struct {
-      CTyList *tyseq;
+      CTyList *tylist;
       CLongTyCon *longtycon;
     } type_construction;
     struct {

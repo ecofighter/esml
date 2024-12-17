@@ -572,4 +572,5 @@ ExBind *new_exbind_replication(bool op_prefixed_vid, VId *vid,
                                bool op_prefixed_longvid, LongVId *longvid,
                                ExBind *next);
 void free_exbind(ExBind *exbind);
+
 #endif // SYNTAX_H

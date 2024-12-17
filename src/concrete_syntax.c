@@ -655,13 +655,13 @@ CTy *new_c_ty_record_type_expression(CTyRow *tyrow) {
   return ty;
 }
 
-CTy *new_c_ty_type_construction(CTyList *tyseq, CLongTyCon *longtycon) {
+CTy *new_c_ty_type_construction(CTyList *tylist, CLongTyCon *longtycon) {
   CTy *ty = (CTy *)malloc(sizeof(CTy));
   if (ty == NULL) {
     return NULL;
   }
   ty->kind = CTY_TYPE_CONSTRUCTION;
-  ty->u.type_construction.tyseq = tyseq;
+  ty->u.type_construction.tylist = tylist;
   ty->u.type_construction.longtycon = longtycon;
   return ty;
 }
@@ -709,7 +709,7 @@ void free_c_ty(CTy *ty) {
     free_c_tyrow(ty->u.record_type_expression.tyrow);
     break;
   case CTY_TYPE_CONSTRUCTION:
-    free_c_tylist(ty->u.type_construction.tyseq);
+    free_c_tylist(ty->u.type_construction.tylist);
     free_c_longtycon(ty->u.type_construction.longtycon);
     break;
   case CTY_TUPLE_TYPE:

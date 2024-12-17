@@ -434,7 +434,8 @@ conty
 
 conty_asterisk_list2
 : conty ASTERISK conty
-    { $$ = (CTyList *)parse_state_register_node(state, new_c_tylist($1, new_c_tylist($3, NULL))); }
+    { CTyList *tmp = (CTyList *)parse_state_register_node(state, new_c_tylist($3, NULL));
+      $$ = (CTyList *)parse_state_register_node(state, new_c_tylist($1, tmp)); }
 | conty ASTERISK conty_asterisk_list2
     { $$ = (CTyList *)parse_state_register_node(state, new_c_tylist($1, $3)); }
 ;
@@ -455,7 +456,8 @@ ty
 
 ty_comma_list2
 : ty COMMA ty
-    { $$ = (CTyList *)parse_state_register_node(state, new_c_tylist($1, new_c_tylist($3, NULL))); }
+    { CTyList *tmp = (CTyList *)parse_state_register_node(state, new_c_tylist($3, NULL));
+      $$ = (CTyList *)parse_state_register_node(state, new_c_tylist($1, tmp)); }
 | ty COMMA ty_comma_list2
     { $$ = (CTyList *)parse_state_register_node(state, new_c_tylist($1, $3)); }
 ;
