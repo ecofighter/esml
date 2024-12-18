@@ -38,6 +38,7 @@ extern int parse_stdin(ParseState *state);
   CAtPatList *atpatlist;
   CPatRow *patrow;
   CPat *pat;
+  CPatList *patlist;
   CTy *ty;
   CTyList *tylist;
   CTyRow *tyrow;
@@ -101,6 +102,7 @@ extern int parse_stdin(ParseState *state);
 %type <atpatlist> atpat_list1 atpat_list2
 %type <patrow> patrow
 %type <pat> pat
+%type <patlist> pat_comma_list2 pat_comma_list1 pat_comma_list
 %type <ty> atty conty tuplety ty
 %type <tylist> conty_asterisk_list2 ty_comma_list2 tyseq
 %type <tyrow> tyrow
@@ -339,6 +341,7 @@ longstridlist1
     { $$ = (CLongStrIdList *)parse_state_register_node(state, new_c_longstridlist($1, NULL)); }
 ;
 
+// TODO
 atpat_nonid
 : UNDERBAR
     { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_wildcard()); }
@@ -348,6 +351,12 @@ atpat_nonid
     { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_record(NULL)); }
 | LBRACE patrow RBRACE
     { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_record($2)); }
+| LPAREN RPAREN
+    { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_zero_tuple()); }
+| LPAREN pat_comma_list2 RPAREN
+    { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_n_tuple($2)); }
+| LBRACKET pat_comma_list RBRACKET
+    { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_list($2)); }
 | LPAREN pat RPAREN
     { $$ = (CAtPat *)parse_state_register_node(state, new_c_atpat_parened_pat($2)); }
 ;
@@ -412,6 +421,28 @@ pat
     { $$ = (CPat *)parse_state_register_node(state, new_c_pat_layered($1, $2, NULL, $4)); }
 | OP_option vid_bind COLON ty AS pat
     { $$ = (CPat *)parse_state_register_node(state, new_c_pat_layered($1, $2, $4, $6)); }
+;
+
+pat_comma_list2
+: pat COMMA pat
+    { CPatList *tmp = (CPatList *)parse_state_register_node(state, new_c_patlist($3, NULL));
+      $$ = (CPatList *)parse_state_register_node(state, new_c_patlist($1, tmp)); }
+| pat COMMA pat_comma_list2
+    { $$ = (CPatList *)parse_state_register_node(state, new_c_patlist($1, $3)); }
+;
+
+pat_comma_list1
+: pat
+    { $$ = (CPatList *)parse_state_register_node(state, new_c_patlist($1, NULL)); }
+| pat COMMA pat_comma_list1
+    { $$ = (CPatList *)parse_state_register_node(state, new_c_patlist($1, $3)); }
+;
+
+pat_comma_list
+: /* emptry */
+    { $$ = NULL; }
+| pat_comma_list1
+    { $$ = $1; }
 ;
 
 atty
@@ -518,7 +549,6 @@ exprow
     { $$ = (CExpRow *)parse_state_register_node(state, new_c_exprow($1, $3, NULL)); }
 ;
 
-/* TODO */
 exp
 : atexp
     { $$ = (CExp *)parse_state_register_node(state, new_c_exp_atomic($1)); }

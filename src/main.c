@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
   if (result == 0) {
     printf("\nParsing completed successfully.\n");
-    // print_ast(stdout, parse_state_get_result(state));
+    print_c_dec(stdout, parse_state_get_result(state), 0);
     parse_state_free(state);
     return 0;
   } else {

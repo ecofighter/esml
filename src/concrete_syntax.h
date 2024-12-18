@@ -5,8 +5,8 @@
 
 typedef struct CVId CVId;
 typedef struct CVIdList CVIdList;
-typedef struct CLongVId CLongVId;
 typedef struct CQualifiedVId CQualifiedVId;
+typedef struct CLongVId CLongVId;
 typedef struct CTyVar CTyVar;
 typedef struct CTyVarList CTyVarList;
 typedef struct CTyCon CTyCon;
@@ -374,11 +374,11 @@ struct CExp {
     struct {
       CExp *exp1;
       CExp *exp2;
-    } conjuction;
+    } conjunction;
     struct {
       CExp *exp1;
       CExp *exp2;
-    } disjuction;
+    } disjunction;
     struct {
       CExp *exp;
       CMatch *match;
@@ -507,6 +507,11 @@ struct CValBind {
   } u;
 };
 
+struct CFValBind {
+  CFMatch *fmatch;
+  CFValBind *next;
+};
+
 struct CFMatch {
   CFMrule *fmrule;
   CFMatch *next;
@@ -516,11 +521,6 @@ struct CFMrule {
   CAtPatList *atpatlist;
   CTy *ty;
   CExp *exp;
-};
-
-struct CFValBind {
-  CFMatch *fmatch;
-  CFValBind *next;
 };
 
 struct CTypBind {

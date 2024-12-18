@@ -995,8 +995,8 @@ CExp *new_c_exp_conjunction(CExp *exp1, CExp *exp2) {
     return NULL;
   }
   conj->kind = CEXP_CONJUNCTION;
-  conj->u.conjuction.exp1 = exp1;
-  conj->u.conjuction.exp2 = exp2;
+  conj->u.conjunction.exp1 = exp1;
+  conj->u.conjunction.exp2 = exp2;
   return conj;
 }
 
@@ -1006,8 +1006,8 @@ CExp *new_c_exp_disjunction(CExp *exp1, CExp *exp2) {
     return NULL;
   }
   disj->kind = CEXP_DISJUNCTION;
-  disj->u.disjuction.exp1 = exp1;
-  disj->u.disjuction.exp2 = exp2;
+  disj->u.disjunction.exp1 = exp1;
+  disj->u.disjunction.exp2 = exp2;
   return disj;
 }
 
@@ -1092,12 +1092,12 @@ void free_c_exp(CExp *exp) {
     free_c_ty(exp->u.typed.ty);
     break;
   case CEXP_CONJUNCTION:
-    free_c_exp(exp->u.conjuction.exp1);
-    free_c_exp(exp->u.conjuction.exp2);
+    free_c_exp(exp->u.conjunction.exp1);
+    free_c_exp(exp->u.conjunction.exp2);
     break;
   case CEXP_DISJUNCTION:
-    free_c_exp(exp->u.disjuction.exp1);
-    free_c_exp(exp->u.disjuction.exp2);
+    free_c_exp(exp->u.disjunction.exp1);
+    free_c_exp(exp->u.disjunction.exp2);
     break;
   case CEXP_HANDLE_EXCEPTION:
     free_c_exp(exp->u.handle_exception.exp);

@@ -90,7 +90,7 @@ tyvar "'"({letter}|{digit}|[_'])*
 
 <INITIAL>[1-9][0-9]* { return NUMERIC; }
 <INITIAL>~?[0-9]+ { return INTEGER; }
-<INITIAL>~?[0-9]+(\.[0-9]+)?(E~?[0-9]+)? { return REAL; }
+<INITIAL>~?[0-9]+(\.[0-9]+)?([eE]~?[0-9]+)? { return REAL; }
 <INITIAL>{tyvar} { return TYVAR; }
 <INITIAL>{alphanumeric_id} { return IDENTIFIER; }
 <INITIAL>{symbolic_id} { return IDENTIFIER; }
