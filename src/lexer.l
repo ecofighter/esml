@@ -25,7 +25,7 @@ digit [0-9]
 hexdigit [0-9a-fA-F]
 alphanumeric_id {letter}({letter}|{digit}|[_'])*
 symbolic_id {symbol}+
-qualified_id ({alphanumeric_id}\.)+({alphanumeric_id}|{symbolic_id}|"="|"*")
+qualified_id ({alphanumeric_id}".")+({alphanumeric_id}|{symbolic_id}|"="|"*")
 tyvar "'"({letter}|{digit}|[_'])*
 
 %%

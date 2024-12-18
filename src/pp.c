@@ -548,6 +548,9 @@ void print_c_valbind(FILE *fp, CValBind *valbind, int indent) {
     fprintf(fp, "bind\n");
     print_c_pat(fp, valbind->u.bind.pat, indent + 1);
     print_c_exp(fp, valbind->u.bind.exp, indent + 1);
+    if (valbind->u.bind.next) {
+      print_c_valbind(fp, valbind->u.bind.next, indent + 1);
+    }
     break;
   case CVALBIND_REC:
     fprintf(fp, "rec\n");
