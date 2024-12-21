@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(esml VERSION 0.0.1 LANGUAGES C)
-add_compile_options(-g -Wall -Wextra -Wpedantic)
+add_compile_options(-Wall -Wextra -Wpedantic)
+set(CMAKE_C_FLAGS_DEBUG "-g3 -O0")
+set(CMAKE_C_FLAGS_RELEASE "-g -O2")
 
-set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
+set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 file(GLOB SRCS "${SRC_DIR}/*.c")
 
 set(PARSER_DIR "${CMAKE_CURRENT_BINARY_DIR}")
@@ -35,6 +37,9 @@ target_include_directories(esml PRIVATE "${SRC_DIR}")
 target_include_directories(esml PRIVATE "${PARSER_DIR}")
 set_property(TARGET esml PROPERTY C_EXTENSIONS OFF)
 set_property(TARGET esml PROPERTY C_STANDARD 99)
+if(UNIX)
+  add_compile_definitions(_POSIX_C_SOURCE=200809L)
+endif(UNIX)
 
 # enable_testing()
 # set(TEST_DIR "test")

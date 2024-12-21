@@ -11,11 +11,18 @@
   else { for (yycolumn = 1; yytext[yyleng - yycolumn] != '\n'; ++yycolumn) {} }
 %}
 
-%option always-interactive
-%option yylineno noyywrap noinput nounput
+%option 8bit
+%option never-interactive
+%option nounistd
+%option yylineno
+%option noyywrap
+%option noinput
+%option nounput
 %option extra-type="int"
 %option reentrant
-%option bison-bridge bison-locations
+%option bison-bridge
+%option bison-locations
+%option outfile="lexer.c" header-file="lexer.h"
 
 %x COMMENT
 
