@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "parse_state.h"
+#include "utils.h"
 
 #define INITIAL_CAPACITY 16
 
@@ -86,10 +87,10 @@ static void error_list_add(ErrorList *list, const char *message, int line,
   }
 
   ParseError *error = &list->errors[list->count++];
-  size_t msg_len = strlen(message);
-  error->message = (char *)malloc(msg_len + 1);
-  memcpy(error->message, message, msg_len);
-  error->message[msg_len] = '\0';
+  error->message = esml_strdup(message);
+  if (error->message == NULL) {
+    fprintf(stderr, "failed to add an error.\n");
+  }
   error->line = line;
   error->column = column;
 }
@@ -122,16 +123,11 @@ ParseState *parse_state_create(const char *filename) {
   if (state == NULL) {
     return NULL;
   }
-  {
-    size_t filename_len = strlen(filename);
-    char *tmpfilename = (char *)malloc(filename_len + 1);
-    if (tmpfilename == NULL) {
-      free(state);
-      return NULL;
-    }
-    memcpy(tmpfilename, filename, filename_len);
-    tmpfilename[filename_len] = '\0';
-    state->filename = (const char *)tmpfilename;
+
+  state->filename = (const char *)esml_strdup(filename);
+  if (state->filename == NULL) {
+    free(state);
+    return NULL;
   }
 
   state->tracker = memory_tracker_create();

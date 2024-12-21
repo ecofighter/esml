@@ -7,6 +7,7 @@
 #include "parse_state.h"
 #include "parser.h"
 #include "lexer.h"
+#include "utils.h"
 }
 %code provides {
 extern int parse_stdin(ParseState *state);
@@ -150,55 +151,37 @@ program
 
 numeric
 : NUMERIC
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
 integer
 : INTEGER
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
 word
 : WORD
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
 real
 : REAL
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
 identifier
 : IDENTIFIER
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
 qualified_identifier
 : QUALIFIED_IDENTIFIER
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (char *)parse_state_register_node(state, text); }
 ;
 
@@ -265,10 +248,7 @@ longvid_bind
 ;
 tyvar
 : TYVAR
-    { int len = yyget_leng(scanner);
-      char *text = (char *)malloc(len + 1);
-      memcpy(text, yyget_text(scanner), len);
-      text[len] = '\0';
+    { char *text = esml_strdup(yyget_text(scanner));
       $$ = (CTyVar *)parse_state_register_node(state, new_c_tyvar(parse_state_register_node(state, text))); }
 ;
 

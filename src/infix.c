@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "infix.h"
+#include "utils.h"
 
 #define TABLE_INITIAL_CAPACITY 16
 
@@ -43,16 +44,11 @@ static Entry *entry_create(const char *key, int prec, Assoc assoc) {
     return NULL;
   }
 
-  size_t keylen = strlen(key);
-  char *tmpkey = (char *)malloc(keylen + 1);
-  if (tmpkey == NULL) {
+  entry->key = (const char *)esml_strdup(key);
+  if (entry->key == NULL) {
     free(entry);
     return NULL;
   }
-  memcpy(tmpkey, key, keylen);
-  tmpkey[keylen] = '\0';
-
-  entry->key = (const char *)tmpkey;
   entry->fixity.prec = prec;
   entry->fixity.assoc = assoc;
   entry->next = NULL;
