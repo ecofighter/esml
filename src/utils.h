@@ -1,7 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L
+#if ((defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L) ||               \
+     __STDC_VERSION__ >= 202311L)
 #include <string.h>
 #define esml_strdup strdup
 #else
